@@ -8,7 +8,7 @@ import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 
 from neurobridge.schemas.analysis import CorrelationResult, CoxResult, DEResult, EnrichmentResult, KMResult, ValidationSummary
-from neurobridge.viz.theme import CELLTYPE_COLORS, COHORT_COLORS, DIVERGING, GROUP_COLORS, INK_2, SEQUENTIAL_BLUE, SUBTYPE_COLORS, apply, color_for
+from neurobridge.viz.theme import CELLTYPE_COLORS, COHORT_COLORS, CYAN, DIM, DIVERGING, GROUP_COLORS, INK, INK_2, SEQUENTIAL_BLUE, SUBTYPE_COLORS, TEAL, VIOLET, WARM, apply, color_for
 
 
 def _fmt_p(p: float | None) -> str:
@@ -41,9 +41,9 @@ def forest_figure(rows: list[dict], title: str, caption: str, ref: float = 1.0, 
     rows = list(rows)[::-1]
     fig = go.Figure()
     for i, r in enumerate(rows):
-        col = r.get("color", "#2a78d6")
+        col = r.get("color", CYAN)
         fig.add_trace(go.Scatter(x=[r["lo"], r["hi"]], y=[r["label"]] * 2, mode="lines", line=dict(color=col, width=2), hoverinfo="skip", showlegend=False))
-        fig.add_trace(go.Scatter(x=[r["est"]], y=[r["label"]], mode="markers", marker=dict(color=col, size=10, symbol=r.get("symbol", "square"), line=dict(color="white", width=2)), showlegend=False,
+        fig.add_trace(go.Scatter(x=[r["est"]], y=[r["label"]], mode="markers", marker=dict(color=col, size=10, symbol=r.get("symbol", "circle"), line=dict(color="#04060c", width=2)), showlegend=False,
                                  hovertemplate=f"{r['label']}<br>estimate {r['est']:.2f} ({r['lo']:.2f}-{r['hi']:.2f})<br>p = {_fmt_p(r.get('p'))}<extra></extra>"))
     fig.add_vline(x=ref, line=dict(color=INK_2, width=1, dash="dot"))
     los = [r["lo"] for r in rows if r.get("lo") is not None and np.isfinite(r["lo"])]
@@ -73,9 +73,9 @@ def validation_forest_figure(vs: ValidationSummary, title: str | None = None) ->
     for r in vs.per_cohort:
         if r.estimate is None or np.isnan(r.estimate):
             continue
-        rows.append({"label": f"{r.cohort_id} [{r.role}] n={r.n}", "est": r.estimate, "lo": r.ci_low, "hi": r.ci_high, "p": r.p, "color": COHORT_COLORS.get(r.cohort_id, "#2a78d6")})
+        rows.append({"label": f"{r.cohort_id} [{r.role}] n={r.n}", "est": r.estimate, "lo": r.ci_low, "hi": r.ci_high, "p": r.p, "color": COHORT_COLORS.get(r.cohort_id, CYAN)})
     if vs.pooled_estimate is not None:
-        rows.append({"label": "Random-effects pooled (descriptive)", "est": vs.pooled_estimate, "lo": vs.pooled_ci_low, "hi": vs.pooled_ci_high, "p": vs.pooled_p, "color": "#1d1d1b", "symbol": "diamond"})
+        rows.append({"label": "Random-effects pooled (descriptive)", "est": vs.pooled_estimate, "lo": vs.pooled_ci_low, "hi": vs.pooled_ci_high, "p": vs.pooled_p, "color": INK, "symbol": "diamond"})
     i2 = f" I^2 = {vs.heterogeneity_i2:.0f}%." if vs.heterogeneity_i2 is not None else ""
     if is_hr:
         cap = f"Adjusted Cox HR per 1 SD of the score, estimated separately in each cohort (primary tumours). Verdict: {vs.verdict}.{i2} Replication rule: same direction as discovery and p < 0.05 in an independent cohort."
@@ -90,7 +90,7 @@ def volcano_figure(de: DEResult, highlight: list[str] | None = None, q_thr: floa
     sig_up = (df.q_value < q_thr) & (df.log2_fc >= fc_thr)
     sig_dn = (df.q_value < q_thr) & (df.log2_fc <= -fc_thr)
     fig = go.Figure()
-    for mask, name, col in [(~(sig_up | sig_dn), "not significant", "#c3c2b7"), (sig_dn, f"higher in {de.group_b}", "#2a78d6"), (sig_up, f"higher in {de.group_a}", "#eb6834")]:
+    for mask, name, col in [(~(sig_up | sig_dn), "not significant", DIM), (sig_dn, f"higher in {de.group_b}", CYAN), (sig_up, f"higher in {de.group_a}", VIOLET)]:
         d = df[mask]
         fig.add_trace(go.Scattergl(x=d.log2_fc, y=d.nlp, mode="markers", name=f"{name} ({mask.sum()})", marker=dict(size=5, color=col, opacity=0.7), text=d.gene,
                                    customdata=np.stack([d.q_value, d.hedges_g], axis=1), hovertemplate="%{text}<br>log2FC %{x:.2f}<br>q %{customdata[0]:.2e}<br>Hedges g %{customdata[1]:.2f}<extra></extra>"))
@@ -98,7 +98,7 @@ def volcano_figure(de: DEResult, highlight: list[str] | None = None, q_thr: floa
     if highlight:
         lab = pd.concat([lab, df[df.gene.isin(highlight)]]).drop_duplicates("gene")
     for _, r in lab.iterrows():
-        fig.add_annotation(x=r.log2_fc, y=r.nlp, text=r.gene, showarrow=False, yshift=9, font=dict(size=10, color="#1d1d1b"))
+        fig.add_annotation(x=r.log2_fc, y=r.nlp, text=r.gene, showarrow=False, yshift=9, font=dict(size=10, color=INK))
     fig.update_xaxes(title=f"log2 fold change ({de.group_a} - {de.group_b})")
     fig.update_yaxes(title="-log10 p")
     cap = (f"{de.rows[0].test if de.rows else ''} test per gene on log2 expression; {de.n_tested} expressed genes tested; {de.n_significant} with BH q < {de.alpha}. "
@@ -143,12 +143,12 @@ def enrichment_figure(enr: EnrichmentResult, top: int = 15) -> go.Figure:
         return apply(fig, "No enrichment terms", "No terms returned.")
     if "nes" in terms[0]:
         x = [t["nes"] for t in terms]
-        col = ["#eb6834" if v > 0 else "#2a78d6" for v in x]
+        col = [VIOLET if v > 0 else CYAN for v in x]
         xl = "Normalised enrichment score"
         hov = [f"{t['term']}<br>NES {t['nes']:.2f}<br>FDR q {t['q']:.3g}" for t in terms]
     else:
         x = [-np.log10(max(t["q"], 1e-300)) for t in terms]
-        col = ["#2a78d6"] * len(x)
+        col = [CYAN] * len(x)
         xl = "-log10 FDR q"
         hov = [f"{t['term']}<br>overlap {t['overlap']}<br>odds ratio {t['odds_ratio']:.1f}<br>q {t['q']:.3g}" for t in terms]
     fig = go.Figure(go.Bar(x=x, y=[t["term"][:70] for t in terms], orientation="h", marker=dict(color=col, cornerradius=4), hovertext=hov, hoverinfo="text"))
@@ -188,7 +188,7 @@ def dotplot_figure(table: pd.DataFrame, title: str, caption: str) -> go.Figure:
             xs.append(g); ys.append(f"{ct} (n={int(n[ct])})" if n is not None else ct)
             sizes.append(4 + 26 * float(frac.loc[ct, g])); colors.append(float(mean.loc[ct, g]))
             hov.append(f"{ct} / {g}<br>detected in {100 * frac.loc[ct, g]:.0f}% of cells<br>mean log1p(CP10k) {mean.loc[ct, g]:.2f}")
-    fig = go.Figure(go.Scatter(x=xs, y=ys, mode="markers", marker=dict(size=sizes, color=colors, colorscale=[[i / 6, c] for i, c in enumerate(SEQUENTIAL_BLUE)], colorbar=dict(title="mean expr", thickness=12), line=dict(color="white", width=1)), hovertext=hov, hoverinfo="text"))
+    fig = go.Figure(go.Scatter(x=xs, y=ys, mode="markers", marker=dict(size=sizes, color=colors, colorscale=[[i / 6, c] for i, c in enumerate(SEQUENTIAL_BLUE)], colorbar=dict(title="mean expr", thickness=12), line=dict(color="#04060c", width=1)), hovertext=hov, hoverinfo="text"))
     fig.update_xaxes(showgrid=False)
     fig.update_yaxes(showgrid=False, automargin=True)
     return apply(fig, title, caption, height=max(340, 60 + 42 * len(cts)))
@@ -212,13 +212,13 @@ def scatter_figure(x: pd.Series, y: pd.Series, xlabel: str, ylabel: str, title: 
     fig = go.Figure()
     for i, c in enumerate(sorted(df.c.astype(str).unique())):
         d = df[df.c.astype(str) == c]
-        fig.add_trace(go.Scatter(x=d.x, y=d.y, mode="markers", name=f"{c} ({len(d)})", marker=dict(size=8, color=color_for(c, SUBTYPE_COLORS, i), opacity=0.75, line=dict(color="white", width=1)), text=d.index, hovertemplate="%{text}<br>x %{x:.2f}<br>y %{y:.2f}<extra></extra>", showlegend=color is not None))
+        fig.add_trace(go.Scatter(x=d.x, y=d.y, mode="markers", name=f"{c} ({len(d)})", marker=dict(size=8, color=color_for(c, SUBTYPE_COLORS, i), opacity=0.75, line=dict(color="#04060c", width=1)), text=d.index, hovertemplate="%{text}<br>x %{x:.2f}<br>y %{y:.2f}<extra></extra>", showlegend=color is not None))
     fig.update_xaxes(title=xlabel)
     fig.update_yaxes(title=ylabel)
     return apply(fig, title, caption)
 
 
-PROGRAMME_COLORS = {"neuron-enriched": "#6250d6", "tumour_glial-enriched": "#eb6834", "myeloid-enriched": "#2a78d6", "vascular-enriched": "#1baf7a"}
+PROGRAMME_COLORS = {"neuron-enriched": TEAL, "tumour_glial-enriched": VIOLET, "myeloid-enriched": CYAN, "vascular-enriched": WARM}
 
 
 def spatial_figure(a, values, title: str, caption: str, continuous: bool = True, colorscale=None, image=None, highlight=None, cmid=None) -> go.Figure:
@@ -228,7 +228,7 @@ def spatial_figure(a, values, title: str, caption: str, continuous: bool = True,
     fig = go.Figure()
     if image is not None:
         grey = (np.asarray(image, float) @ [0.299, 0.587, 0.114]).clip(0, 255)
-        fig.add_trace(go.Image(z=np.stack([grey] * 3, axis=-1).astype(np.uint8), opacity=0.35, hoverinfo="skip"))
+        fig.add_trace(go.Image(z=np.stack([grey] * 3, axis=-1).astype(np.uint8), opacity=0.12, hoverinfo="skip"))
     # marker size in screen pixels so that spots roughly tile the hexagonal grid in a ~560 px tall plot
     n_rows = int(a.obs["array_row"].max() - a.obs["array_row"].min() + 1) if "array_row" in a.obs else 78
     size = max(3.0, 0.92 * 470 / n_rows * 1.15)
@@ -245,7 +245,7 @@ def spatial_figure(a, values, title: str, caption: str, continuous: bool = True,
             fig.add_trace(go.Scattergl(x=xy[m, 0], y=xy[m, 1], mode="markers", name=f"{c} ({m.sum()} spots)", marker=dict(size=size, color=PROGRAMME_COLORS.get(c, color_for(c, {}, i)), opacity=0.9), hovertemplate=f"{c}<extra></extra>"))
     if highlight is not None:
         h = np.asarray(highlight, bool)
-        fig.add_trace(go.Scattergl(x=xy[h, 0], y=xy[h, 1], mode="markers", name="neuron-rich spots", marker=dict(size=size, color="rgba(0,0,0,0)", line=dict(color="#1d1d1b", width=1.2))))
+        fig.add_trace(go.Scattergl(x=xy[h, 0], y=xy[h, 1], mode="markers", name="neuron-rich spots", marker=dict(size=size, color="rgba(0,0,0,0)", line=dict(color=INK, width=1.2))))
     pad = size * 3
     fig.update_xaxes(visible=False, scaleanchor="y", constrain="domain", range=[xy[:, 0].min() - pad, xy[:, 0].max() + pad])
     fig.update_yaxes(visible=False, range=[xy[:, 1].max() + pad, xy[:, 1].min() - pad])

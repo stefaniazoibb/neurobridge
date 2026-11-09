@@ -19,7 +19,7 @@ from neurobridge.knowledge.genesets import all_panels  # noqa: E402
 from neurobridge.provenance import software_versions, utc_now_iso  # noqa: E402
 from neurobridge.viz import figures as F  # noqa: E402
 
-st.markdown("<div class='nb-eyebrow'>Module D</div>", unsafe_allow_html=True)
+st.markdown("<div class='nb-eyebrow'>Module D · Validation Lab</div>", unsafe_allow_html=True)
 st.title("Validation Lab")
 st.markdown("<div class='nb-banner'><b>Rules applied here.</b> Exploratory analyses (discovery cohort, any contrast) are labelled as such. "
             "A hypothesis is called <i>replicated</i> only when an <b>independent</b> cohort shows the same direction with p &lt; 0.05. "

@@ -22,7 +22,9 @@ pages = {
     "System": [st.Page("views/architecture.py", title="Architecture & tools", icon=":material/account_tree:")],
 }
 nav = st.navigation(pages)
+from ui.common import BRAND_SVG  # noqa: E402
+
 with st.sidebar:
-    st.markdown("### NeuroBridge")
+    st.markdown(f"<div class='nb-brand'>{BRAND_SVG}<b>NeuroBridge</b></div>", unsafe_allow_html=True)
     st.caption("From biological hypotheses to clinically relevant evidence.")
 nav.run()

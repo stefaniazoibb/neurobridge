@@ -7,7 +7,7 @@ setup()
 from neurobridge.data.cache import read_manifest  # noqa: E402
 from neurobridge.data.catalog import INGESTIBLE  # noqa: E402
 
-st.markdown("<div class='nb-eyebrow'>Module B</div>", unsafe_allow_html=True)
+st.markdown("<div class='nb-eyebrow'>Module B · Dataset Explorer</div>", unsafe_allow_html=True)
 st.title("Dataset Explorer")
 st.caption("Public glioblastoma resources known to NeuroBridge. Metadata below were checked against each source; sample counts in the analysis pages are recomputed from the downloaded files. Datasets that are listed but not ingested say why.")
 

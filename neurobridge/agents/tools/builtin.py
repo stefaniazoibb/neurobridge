@@ -542,7 +542,7 @@ def run_sensitivity_analysis(ws: Workspace, inp: SensitivityInput) -> ToolOutput
     srec = new_record("survival_sensitivity", AnalysisKind.EXPLORATORY, list(inp.dataset_ids), "Cox PH re-estimated under alternative specifications (see table); tertile log-rank", {"panel": inp.panel_id, "covariates": inp.covariates, "n_specifications": len(rows)})
     ref = ws.put("sensitivity", {"record": finish(srec).model_dump(mode="json"), "rows": rows})
     tid = ws.put_table(f"sensitivity_{inp.panel_id}", df)
-    fr = [{"label": f"{r['cohort']}: {r['specification']}", "est": r["hr"], "lo": r["ci_low"], "hi": r["ci_high"], "p": r["p"], "color": F.COHORT_COLORS.get(r["cohort"], "#2a78d6")} for r in rows if not np.isnan(r["hr"])]
+    fr = [{"label": f"{r['cohort']}: {r['specification']}", "est": r["hr"], "lo": r["ci_low"], "hi": r["ci_high"], "p": r["p"], "color": F.COHORT_COLORS.get(r["cohort"], F.CYAN)} for r in rows if not np.isnan(r["hr"])]
     fid = ws.put_figure(f"sensitivity_{inp.panel_id}", F.forest_figure(fr, "Sensitivity of the survival association", "Cox HR per 1 SD of the candidate score under alternative specifications, in primary tumours of each cohort. 'Adjusted' uses the cohort's available covariates (see table). Exploratory robustness checks; no multiplicity correction across specifications."))
     sig = df[(df.p < 0.05) & df.hr.notna()]
     return ToolOutput(summary=f"{len(df)} specifications across {df.cohort.nunique()} cohorts; {len(sig)} with p < 0.05 ({', '.join(sorted(set(sig.cohort)) ) or 'none'})", refs=[ref], figures=[fid], tables=[tid], limitations=["Specifications are not independent and are not corrected for multiplicity; they test robustness, not new hypotheses."], data={"rows": rows, "analysis_id": srec.analysis_id})
@@ -597,7 +597,7 @@ def perform_spatial_analysis(ws: Workspace, inp: SpatialInput) -> ToolOutput:
     ws.put_figure("spatial_interface_gene", F.spatial_figure(a, spa._gene(a, top_if), f"{top_if} expression per spot", base + f" log1p(CP10k). {top_if} shows the strongest neuron-adjusted gradient with distance to neuron-rich spots (rings), adjusted for each spot's neuron score.", image=img))
     lrs = lr.copy()
     lrs["pair"] = lrs["ligand"] + " → " + lrs["receptor"]
-    fr = [{"label": r.pair, "est": r.z_domain, "lo": r.z_domain, "hi": r.z_domain, "p": r.p_domain, "color": "#2a78d6" if r.q_domain < 0.05 else "#9a9890"} for r in lrs.itertuples()]
+    fr = [{"label": r.pair, "est": r.z_domain, "lo": r.z_domain, "hi": r.z_domain, "p": r.p_domain, "color": F.TEAL if r.q_domain < 0.05 else F.DIM} for r in lrs.itertuples()]
     ws.put_figure("spatial_lr", F.forest_figure(fr, "Ligand–receptor neighbour co-localisation (domain-stratified null)", f"z-score of the observed neighbour co-expression against a null in which the ligand is permuted within spatial domains ({inp.n_perm} permutations). Blue: BH q < 0.05. Co-localisation of transcripts, not evidence of interaction.", ref=0.0, xlabel="z (domain-stratified)", log_x=False))
     tids = [ws.put_table("spatial_correlations", res["correlations"]), ws.put_table("spatial_interface", itab), ws.put_table("spatial_ligand_receptor", lr), ws.put_table("spatial_domains", dom.reset_index())]
     cor = res["correlations"].set_index("feature")

@@ -11,7 +11,7 @@ from neurobridge.report.builder import REPORT_FIGURES  # noqa: E402
 from neurobridge.report.export import export_markdown, markdown_to_pdf  # noqa: E402
 from neurobridge.runs import list_runs, load_run  # noqa: E402
 
-st.markdown("<div class='nb-eyebrow'>Module E</div>", unsafe_allow_html=True)
+st.markdown("<div class='nb-eyebrow'>Module E · Evidence Report</div>", unsafe_allow_html=True)
 st.title("Evidence Report")
 st.caption("Generated from executed analyses only. Every claim carries an evidence tag and links to its analysis id or to a verified PubMed record; interpretations are labelled as such.")
 

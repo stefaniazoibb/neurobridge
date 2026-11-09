@@ -13,7 +13,7 @@ from neurobridge.analysis.signatures import dichotomise, score_signature  # noqa
 from neurobridge.knowledge.genesets import LIBRARIES, all_panels  # noqa: E402
 from neurobridge.viz import figures as F  # noqa: E402
 
-st.markdown("<div class='nb-eyebrow'>Module C</div>", unsafe_allow_html=True)
+st.markdown("<div class='nb-eyebrow'>Module C · Biological Explorer</div>", unsafe_allow_html=True)
 st.title("Biological Explorer")
 st.caption("Interactive analyses on real public data. Candidate genes are investigation targets, not assumed biomarkers. All bulk analyses use primary tumours. Every figure states its method under the plot.")
 

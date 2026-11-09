@@ -1,16 +1,39 @@
+# NeuroBridge identity (shared with the website in site/): midnight ground, ivory ink, semantic accents.
 [theme]
-base = "light"
-primaryColor = "#256abf"
-backgroundColor = "#fcfcfb"
-secondaryBackgroundColor = "#f3f2ee"
-textColor = "#1d1d1b"
-font = "sans serif"
+base = "dark"
+primaryColor = "#43c9b4"
+backgroundColor = "#04060c"
+secondaryBackgroundColor = "#0d1322"
+textColor = "#ece7dc"
+linkColor = "#8fd3ee"
+linkUnderline = false
+borderColor = "#1d2434"
+dataframeBorderColor = "#161c2a"
+dataframeHeaderBackgroundColor = "#080c17"
+dataframeHeaderTextColor = "#bcb8ae"
+codeBackgroundColor = "#080c17"
+codeTextColor = "#8fd3ee"
+font = "Hanken Grotesk:https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600&display=swap"
+headingFont = "Newsreader:https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,300;0,6..72,400;1,6..72,300&display=swap"
+codeFont = "Geist Mono:https://fonts.googleapis.com/css2?family=Geist+Mono:wght@400;500&display=swap"
+headingFontWeights = [300, 300, 400, 600, 600, 600]
+baseFontSize = 15
+baseRadius = "small"
+buttonRadius = "small"
+showSidebarBorder = true
+greenColor = "#43c9b4"
+violetColor = "#9d8cf2"
+blueColor = "#8fd3ee"
+orangeColor = "#e6a35c"
+redColor = "#e07a8f"
+grayColor = "#868791"
+chartCategoricalColors = ["#43c9b4", "#9d8cf2", "#8fd3ee", "#e6a35c", "#e07a8f", "#5c84e0", "#a3c46a", "#ece7dc"]
+chartSequentialColors = ["#0f1a26", "#112730", "#13353a", "#164446", "#1a5553", "#1e6762", "#257a72", "#2d8e83", "#37a796", "#43c9b4"]
 
-[theme.dark]
-primaryColor = "#5598e7"
-backgroundColor = "#141413"
-secondaryBackgroundColor = "#1f1f1d"
-textColor = "#f0efec"
+[theme.sidebar]
+backgroundColor = "#070a14"
+secondaryBackgroundColor = "#0d1322"
+borderColor = "#1d2434"
 
 [server]
 headless = true

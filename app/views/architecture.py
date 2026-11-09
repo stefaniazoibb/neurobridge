@@ -9,7 +9,7 @@ setup()
 from neurobridge.agents.llm import provider_status  # noqa: E402
 from neurobridge.agents.tools import REGISTRY  # noqa: E402
 
-st.markdown("<div class='nb-eyebrow'>System</div>", unsafe_allow_html=True)
+st.markdown("<div class='nb-eyebrow'>System · Architecture</div>", unsafe_allow_html=True)
 st.title("Architecture & tools")
 st.markdown("""
 NeuroBridge is a **transparent orchestration layer**: no agent framework, no hidden prompts. The orchestrator runs specialised agents in dependency order;
@@ -19,16 +19,16 @@ Claims are generated from those results with fixed templates, graded by evidence
 """)
 st.graphviz_chart("""
 digraph G {
-  rankdir=LR; bgcolor="transparent"; node [shape=box, style="rounded,filled", fillcolor="#e6eef9", color="#6da7ec", fontname="Helvetica", fontsize=11]; edge [color="#9a9890"];
-  Q [label="Research question", fillcolor="#fcfcfb"];
-  O [label="Orchestrator\\n(execution log, retries,\\npartial failure)", fillcolor="#cde2fb"];
+  rankdir=LR; bgcolor="transparent"; fontcolor="#bcb8ae"; node [shape=box, style="rounded,filled", fillcolor="#0d1322", color="#43c9b4", fontname="Helvetica", fontsize=11, fontcolor="#ece7dc"]; edge [color="#868791"];
+  Q [label="Research question", fillcolor="#080c17"];
+  O [label="Orchestrator\\n(execution log, retries,\\npartial failure)", fillcolor="#123236"];
   H [label="Hypothesis Agent"]; L [label="Literature Agent"]; D [label="Data Agent"]; B [label="Bioinformatics Agent"]; S [label="Statistics Agent"]; V [label="Validation Agent"]; R [label="Scientific Reviewer"];
-  T [label="Tool registry\\n(MCP-shaped schemas)", shape=folder, fillcolor="#f3f2ee"];
-  W [label="Workspace\\n(cohorts, results,\\nfigures, citations)", shape=cylinder, fillcolor="#f3f2ee"];
-  C [label="Claims\\n(evidence-graded)", fillcolor="#fcfcfb"]; RP [label="Evidence report\\n(MD / PDF)", fillcolor="#fcfcfb"];
+  T [label="Tool registry\\n(MCP-shaped schemas)", shape=folder, fillcolor="#0d1322"];
+  W [label="Workspace\\n(cohorts, results,\\nfigures, citations)", shape=cylinder, fillcolor="#0d1322"];
+  C [label="Claims\\n(evidence-graded)", fillcolor="#080c17"]; RP [label="Evidence report\\n(MD / PDF)", fillcolor="#080c17"];
   Q -> O; O -> H -> L -> D -> B -> S -> V -> C -> R -> RP;
   {L D B S V} -> T [style=dashed]; T -> W [style=dashed];
-  subgraph cluster_data { label="Public data"; fontname="Helvetica"; color="#c3c2b7"; X [label="UCSC Xena (TCGA)"]; G [label="CGGA"]; E [label="GEO GSE84465"]; P [label="Europe PMC"]; CB [label="cBioPortal / CELLxGENE"]; }
+  subgraph cluster_data { label="Public data"; fontname="Helvetica"; fontcolor="#bcb8ae"; color="#3b4356"; X [label="UCSC Xena (TCGA)"]; G [label="CGGA"]; E [label="GEO GSE84465"]; P [label="Europe PMC"]; CB [label="cBioPortal / CELLxGENE"]; }
   X -> D; G -> D; E -> D; CB -> D; P -> L;
 }
 """)

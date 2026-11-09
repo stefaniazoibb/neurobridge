@@ -2,6 +2,8 @@
 
 **From biological hypotheses to clinically relevant evidence.**
 
+**[Open the live platform](https://neurobridge.streamlit.app)** · **[Website](https://stefaniazoibb.github.io/neurobridge/)** · [Deployment notes](docs/DEPLOY.md)
+
 ![NeuroBridge website: a living glioblastoma cell beside the headline "Biology is complex. Discovery shouldn't be."](docs/images/site_hero.jpg)
 
 ![Three scenes from the scroll journey: the brain with the tumour site, neuron-to-tumour signalling, and the evidence graph](docs/images/site_journey.jpg)
@@ -172,6 +174,7 @@ scripts/         fetch_data.py, run_demo.py
 - **Bulk confounding.** Neuronal transcripts in bulk tissue mix tumour-intrinsic programmes with infiltrated normal brain. NeuroBridge measures this but cannot fully remove it.
 - **Projected subtypes.** CGGA subtypes come from a classifier and carry its error.
 - **Different adjustment sets.** Covariates differ across cohorts: G-CIMP in TCGA, IDH and MGMT in CGGA. Extent of resection and performance status are unavailable everywhere.
+- **Public demo without Claude.** The hosted app runs the deterministic planner and reviewer; add your own key locally to switch Claude on.
 - **Small single-cell and spatial references.** The single-cell data have four patients and 21 neurons, and tests treat cells as replicates. The spatial data are one section from one patient, at 55 µm spot resolution.
 - **Ceiling of the design.** No perturbation, spatial or longitudinal data means no mechanistic or causal claims.
 - **Simple planner.** The deterministic planner uses keywords. The LLM planner is optional and constrained to the available workflows.

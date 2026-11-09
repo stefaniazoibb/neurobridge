@@ -16,64 +16,57 @@ TAGLINE = "From biological hypotheses to clinically relevant evidence."
 
 CSS = """
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
-html, body, [class*="css"], .stMarkdown, .stText, button, input, textarea { font-family: 'Inter', -apple-system, 'Segoe UI', sans-serif; }
-code, pre { font-family: 'JetBrains Mono', ui-monospace, monospace !important; }
-.block-container { padding-top: 3.6rem; max-width: 1280px; }
-h1 { font-weight: 700; letter-spacing: -0.02em; }
-h2, h3 { font-weight: 600; letter-spacing: -0.01em; }
-.nb-eyebrow { text-transform: uppercase; letter-spacing: .12em; font-size: .72rem; font-weight: 600; color: #256abf; margin-bottom: .2rem; }
-.nb-muted { color: #6b6a65; font-size: .9rem; }
-.nb-card { border: 1px solid rgba(128,128,128,.22); border-radius: 10px; padding: 14px 16px; margin-bottom: 10px; background: rgba(128,128,128,.03); }
+.block-container { padding-top: 3.4rem; max-width: 1280px; }
+h1 { font-weight: 300 !important; letter-spacing: -0.02em; line-height: 1.02 !important; }
+h2, h3 { font-weight: 300 !important; letter-spacing: -0.01em; }
+h1 em, h2 em { color: #bcb8ae; }
+[data-testid="stSidebar"] h3 { font-family: "Hanken Grotesk", sans-serif !important; font-weight: 600 !important; }
+.nb-eyebrow { font-family: "Geist Mono", ui-monospace, monospace; font-size: .72rem; letter-spacing: .02em; color: #868791; margin-bottom: .6rem; display: flex; align-items: center; gap: 10px; }
+.nb-eyebrow::before { content: ""; width: 22px; height: 1px; background: #868791; }
+.nb-muted { color: #868791; font-size: .9rem; }
+.nb-card { border: 1px solid #1d2434; background: #080c17; padding: 14px 16px; margin-bottom: 10px; border-radius: 2px; }
 .nb-card h4 { margin: 0 0 4px 0; font-size: 1rem; font-weight: 600; }
-.nb-pill { display: inline-block; padding: 1px 8px; border-radius: 999px; font-size: .72rem; font-weight: 600; margin-right: 4px; border: 1px solid rgba(128,128,128,.35); }
-.nb-assoc { background: #e6eef9; color: #184f95; border-color: #b7d3f6; }
-.nb-mech { background: #efe9fb; color: #4a3aa7; border-color: #d2c9f3; }
-.nb-plaus { background: #f3f2ee; color: #52514e; }
-.nb-insuf { background: #fdecea; color: #a12c2c; border-color: #f4c2c0; }
-.nb-ok { background: #e7f5e7; color: #136b13; border-color: #bfe3bf; }
-.nb-warn { background: #fff4dc; color: #8a5a00; border-color: #f6d999; }
-.nb-stage { display:flex; gap:10px; align-items:flex-start; padding:8px 0; border-bottom:1px solid rgba(128,128,128,.15); }
-.nb-kpi { font-size: 1.6rem; font-weight: 700; line-height: 1.1; }
-.nb-kpi-label { font-size: .78rem; color: #6b6a65; text-transform: uppercase; letter-spacing: .06em; }
-.nb-banner { border-left: 3px solid #256abf; padding: 8px 12px; background: rgba(37,106,191,.06); border-radius: 4px; font-size: .9rem; }
-@media (prefers-color-scheme: dark) { .nb-muted, .nb-kpi-label { color: #a9a8a0; } }
+.nb-pill { display: inline-flex; align-items: center; gap: 7px; padding: 3px 9px; font-family: "Geist Mono", ui-monospace, monospace; font-size: .68rem; letter-spacing: .02em; margin-right: 6px; border: 1px solid rgba(236,231,220,.24); color: #bcb8ae; border-radius: 2px; }
+.nb-pill::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: #868791; }
+.nb-assoc::before { background: #8fd3ee; } .nb-mech::before { background: #43c9b4; } .nb-plaus::before { background: #9d8cf2; } .nb-insuf::before { background: #e6a35c; }
+.nb-ok::before { background: #43c9b4; } .nb-warn::before { background: #e6a35c; } .nb-no::before { background: #9d8cf2; }
+.nb-stage { display:flex; gap:12px; align-items:flex-start; padding:9px 0; border-bottom:1px solid #161c2a; }
+.nb-kpi { font-family: "Newsreader", Georgia, serif; font-weight: 300; font-size: 2.3rem; line-height: 1; font-variant-numeric: lining-nums tabular-nums; }
+.nb-kpi-label { font-family: "Geist Mono", ui-monospace, monospace; font-size: .68rem; color: #868791; margin-top: 6px; }
+.nb-banner { border-left: 2px solid #43c9b4; padding: 10px 14px; background: #080c17; font-size: .92rem; color: #bcb8ae; }
+.nb-banner b { color: #ece7dc; }
+.nb-brand { display: flex; align-items: center; gap: 10px; margin: 2px 0 6px; }
+.nb-brand b { font-weight: 600; font-size: 1.02rem; letter-spacing: .01em; }
+[data-testid="stCaptionContainer"] { color: #868791; }
 </style>
 """
 
 LEVEL_PILL = {
-    "statistical association": ("ASSOCIATION", "nb-assoc"),
-    "mechanistic evidence": ("MECHANISTIC (literature)", "nb-mech"),
-    "biological plausibility": ("PLAUSIBILITY", "nb-plaus"),
-    "causal evidence": ("CAUSAL", "nb-mech"),
-    "insufficient evidence": ("INSUFFICIENT", "nb-insuf"),
+    "statistical association": ("Association", "nb-assoc"),
+    "mechanistic evidence": ("Mechanistic · literature", "nb-mech"),
+    "biological plausibility": ("Plausibility", "nb-plaus"),
+    "causal evidence": ("Causal", "nb-mech"),
+    "insufficient evidence": ("Insufficient", "nb-insuf"),
 }
-STATUS_PILL = {"supported": "nb-ok", "partially supported": "nb-warn", "not supported": "nb-insuf"}
+STATUS_PILL = {"supported": "nb-ok", "partially supported": "nb-warn", "not supported": "nb-no"}
+BRAND_SVG = ('<svg width="30" height="20" viewBox="0 0 30 20" aria-hidden="true"><circle cx="6" cy="10" r="4.4" fill="none" stroke="#43c9b4" stroke-width="1.5"/>'
+             '<path d="M10.4 10h7.2" stroke="#ece7dc" stroke-width="1.2" stroke-dasharray="1.6 1.6"/><circle cx="23.6" cy="10" r="5.4" fill="none" stroke="#9d8cf2" stroke-width="1.5"/>'
+             '<circle cx="23.6" cy="10" r="1.8" fill="#9d8cf2"/></svg>')
 
 
 def setup(title: str | None = None) -> None:
     st.markdown(CSS, unsafe_allow_html=True)
 
 
-def is_dark() -> bool:
-    try:
-        return st.context.theme.type == "dark"
-    except Exception:  # noqa: BLE001
-        return False
-
-
 def show_fig(fig, key: str | None = None, caption: bool = True) -> None:
-    from neurobridge.viz.theme import for_dark_mode
-
-    f = fig
-    if is_dark():
-        import plotly.graph_objects as go
-
-        f = for_dark_mode(go.Figure(fig))
-    st.plotly_chart(f, theme=None, key=key, width="stretch", config={"displaylogo": False, "toImageButtonOptions": {"format": "svg"}})
+    st.plotly_chart(fig, theme=None, key=key, width="stretch", config={"displaylogo": False, "toImageButtonOptions": {"format": "svg"}})
     cap = (fig.layout.meta or {}).get("caption") if fig.layout.meta else None
     if caption and cap:
         st.caption(cap)
+
+
+def eyebrow(text: str) -> None:
+    st.markdown(f"<div class='nb-eyebrow'>{text}</div>", unsafe_allow_html=True)
 
 
 def pill(text: str, cls: str) -> str:

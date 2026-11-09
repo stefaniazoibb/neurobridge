@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<style>
+  html, body { margin: 0; height: 100%; background: #04060c; overflow: hidden; }
+  canvas { display: block; width: 100%; height: 100%; }
+  .tag { position: absolute; white-space: nowrap; font: 500 11px "Geist Mono", ui-monospace, Menlo, monospace; color: #bcb8ae; display: flex; align-items: center; gap: 8px; pointer-events: none; transition: opacity .4s; }
+  .tag i { width: 7px; height: 7px; border-radius: 50%; border: 1px solid #ece7dc; background: rgba(4,6,12,.6); box-shadow: 0 0 0 5px rgba(236,231,220,.07); }
+  .tag b { color: #ece7dc; font-weight: 500; }
+  .cap { position: absolute; left: 14px; bottom: 10px; font: 400 10.5px "Geist Mono", ui-monospace, Menlo, monospace; color: #868791; }
+  .fallback { position: absolute; inset: 0; display: none; }
+  .no-webgl .fallback { display: block; } .no-webgl canvas { display: none; }
+</style>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist+Mono:wght@400;500&display=swap">
+</head><body>
+<canvas id="c"></canvas>
+<svg class="fallback" viewBox="0 0 600 520" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
+  <defs><radialGradient id="g" cx="50%" cy="45%" r="55%"><stop offset="0" stop-color="#9d8cf2" stop-opacity=".25"/><stop offset=".7" stop-color="#43c9b4" stop-opacity=".1"/><stop offset="1" stop-color="#04060c" stop-opacity="0"/></radialGradient></defs>
+  <path d="M300 90c110-10 200 70 200 170s-80 190-190 190-200-80-200-180 80-170 190-180z" fill="url(#g)" stroke="#8fd3ee" stroke-opacity=".5"/>
+  <ellipse cx="305" cy="265" rx="70" ry="60" fill="#9d8cf2" fill-opacity=".25" stroke="#9d8cf2" stroke-opacity=".7"/>
+</svg>
+<div class="tag" id="t1"><i></i><span><b>Nucleus</b> · established structure</span></div>
+<div class="tag" id="t2"><i></i><span><b>Tumour microtube</b> · established structure</span></div>
+<div class="cap">Glioblastoma cell · conceptual rendering</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/0.158.0/three.min.js"></script>
+<script>
+(() => {
+  const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  let ok = !!window.THREE; try { const t = document.createElement("canvas"); ok = ok && !!(t.getContext("webgl2") || t.getContext("webgl")); } catch (e) { ok = false; }
+  if (!ok) { document.documentElement.classList.add("no-webgl"); document.querySelectorAll(".tag").forEach(t => t.style.display = "none"); return; }
+  const T = THREE, canvas = document.getElementById("c");
+  const R = new T.WebGLRenderer({ canvas, antialias: true }); R.setClearColor(0x04060c, 1); R.setPixelRatio(Math.min(1.75, devicePixelRatio || 1));
+  const scene = new T.Scene(), cam = new T.PerspectiveCamera(40, 1, .05, 50); cam.position.set(0, 0, 4.3);
+  let seed = 3; const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+  const SN = `vec3 mod289(vec3 x){return x-floor(x*(1./289.))*289.;}vec4 mod289(vec4 x){return x-floor(x*(1./289.))*289.;}vec4 permute(vec4 x){return mod289(((x*34.)+1.)*x);}vec4 taylorInvSqrt(vec4 r){return 1.79284291400159-.85373472095314*r;}
+  float snoise(vec3 v){const vec2 C=vec2(1./6.,1./3.);const vec4 D=vec4(0.,.5,1.,2.);vec3 i=floor(v+dot(v,C.yyy));vec3 x0=v-i+dot(i,C.xxx);vec3 g=step(x0.yzx,x0.xyz);vec3 l=1.-g;vec3 i1=min(g.xyz,l.zxy);vec3 i2=max(g.xyz,l.zxy);vec3 x1=x0-i1+C.xxx;vec3 x2=x0-i2+C.yyy;vec3 x3=x0-D.yyy;i=mod289(i);
+  vec4 p=permute(permute(permute(i.z+vec4(0.,i1.z,i2.z,1.))+i.y+vec4(0.,i1.y,i2.y,1.))+i.x+vec4(0.,i1.x,i2.x,1.));float n_=.142857142857;vec3 ns=n_*D.wyz-D.xzx;vec4 j=p-49.*floor(p*ns.z*ns.z);vec4 x_=floor(j*ns.z);vec4 y_=floor(j-7.*x_);vec4 x=x_*ns.x+ns.yyyy;vec4 y=y_*ns.x+ns.yyyy;vec4 h=1.-abs(x)-abs(y);
+  vec4 b0=vec4(x.xy,y.xy);vec4 b1=vec4(x.zw,y.zw);vec4 s0=floor(b0)*2.+1.;vec4 s1=floor(b1)*2.+1.;vec4 sh=-step(h,vec4(0.));vec4 a0=b0.xzyw+s0.xzyw*sh.xxyy;vec4 a1=b1.xzyw+s1.xzyw*sh.zzww;vec3 p0=vec3(a0.xy,h.x);vec3 p1=vec3(a0.zw,h.y);vec3 p2=vec3(a1.xy,h.z);vec3 p3=vec3(a1.zw,h.w);
+  vec4 norm=taylorInvSqrt(vec4(dot(p0,p0),dot(p1,p1),dot(p2,p2),dot(p3,p3)));p0*=norm.x;p1*=norm.y;p2*=norm.z;p3*=norm.w;vec4 m=max(.6-vec4(dot(x0,x0),dot(x1,x1),dot(x2,x2),dot(x3,x3)),0.);m=m*m;return 42.*dot(m*m,vec4(dot(p0,x0),dot(p1,x1),dot(p2,x2),dot(p3,x3)));}`;
+  function mem(o) { return new T.ShaderMaterial({ transparent: true, depthWrite: false, side: o.side || T.FrontSide,
+    uniforms: { uTime: { value: 0 }, uAmp: { value: o.amp }, uFreq: { value: o.freq }, uSpeed: { value: o.speed }, uInner: { value: new T.Color(...o.inner) }, uRim: { value: new T.Color(...o.rim) }, uIri: { value: new T.Color(.62, .5, .95) }, uLight: { value: new T.Vector3(.4, .6, 1).normalize() }, uFill: { value: o.fill }, uPro: { value: o.pro ? 1 : 0 } },
+    vertexShader: SN + `uniform float uTime,uAmp,uFreq,uSpeed,uPro; varying vec3 vN,vW; varying float vNz;
+      const vec3 D1=normalize(vec3(.9,.35,.2)); const vec3 D2=normalize(vec3(-.7,.6,-.3)); const vec3 D3=normalize(vec3(-.2,-.85,.45));
+      float disp(vec3 p){vec3 n=normalize(p);float t=uTime*uSpeed;float d=snoise(n*uFreq+vec3(t,t*.7,-t))*uAmp+snoise(n*uFreq*2.4-vec3(t*.6))*uAmp*.12;
+        d+=uPro*(pow(max(dot(n,D1),0.),26.)*.42+pow(max(dot(n,D2),0.),30.)*.34+pow(max(dot(n,D3),0.),34.)*.3);return d;}
+      void main(){vec3 p=position;vec3 n=normalize(p);vec3 t1=normalize(cross(n,vec3(0.,1.,.01)));vec3 t2=normalize(cross(n,t1));float e=.012;
+        vec3 p0=p+n*disp(p);vec3 pa=p+t1*e;pa+=normalize(pa)*disp(pa);vec3 pb=p+t2*e;pb+=normalize(pb)*disp(pb);vec3 nn=normalize(cross(pa-p0,pb-p0));if(dot(nn,n)<0.)nn=-nn;
+        vec4 w=modelMatrix*vec4(p0,1.);vW=w.xyz;vN=normalize(mat3(modelMatrix)*nn);vNz=disp(p);gl_Position=projectionMatrix*viewMatrix*w;}`,
+    fragmentShader: `uniform vec3 uInner,uRim,uIri,uLight;uniform float uFill;varying vec3 vN,vW;varying float vNz;
+      void main(){vec3 v=normalize(cameraPosition-vW);vec3 n=normalize(vN);if(!gl_FrontFacing)n=-n;float fr=pow(1.-abs(dot(n,v)),3.4);float dif=max(dot(n,uLight),0.);vec3 h=normalize(uLight+v);float sp=pow(max(dot(n,h),0.),48.);
+        vec3 c=mix(uInner,uRim,fr);c+=uIri*.22*(.5+.5*sin(vNz*28.+fr*5.));c*=.7+.35*dif;c+=vec3(.95,.93,.88)*sp*.22;gl_FragColor=vec4(c,clamp(uFill+(1.-uFill)*fr+sp*.15,0.,1.));}` }); }
+  const cell = new T.Group(); scene.add(cell);
+  const geo = new T.IcosahedronGeometry(1, 110);
+  const mF = mem({ amp: .075, freq: 1.2, speed: .08, inner: [.05, .08, .15], rim: [.62, .9, .95], fill: .03, pro: true }), mB = mem({ amp: .075, freq: 1.2, speed: .08, inner: [.04, .05, .1], rim: [.3, .42, .7], fill: .02, pro: true, side: T.BackSide });
+  const back = new T.Mesh(geo, mB), front = new T.Mesh(geo, mF); back.renderOrder = 1; front.renderOrder = 5; cell.add(back, front);
+  const nM = mem({ amp: .06, freq: 2, speed: .05, inner: [.3, .22, .55], rim: [.82, .74, 1], fill: .45 }); const nuc = new T.Mesh(new T.IcosahedronGeometry(.36, 60), nM); nuc.position.set(.08, .04, 0); nuc.renderOrder = 3; cell.add(nuc);
+  const oM = mem({ amp: .12, freq: 3, speed: .1, inner: [.12, .36, .34], rim: [.5, .95, .85], fill: .35 }); const org = new T.InstancedMesh(new T.IcosahedronGeometry(1, 10), oM, 22); org.renderOrder = 4;
+  { const m = new T.Matrix4(), q = new T.Quaternion(), s = new T.Vector3(); for (let i = 0; i < 22; i++) { let v; do { v = new T.Vector3(rnd() * 2 - 1, rnd() * 2 - 1, rnd() * 2 - 1); } while (v.length() > 1 || v.length() < .55); q.setFromEuler(new T.Euler(rnd() * 3, rnd() * 3, rnd() * 3)); s.set(.07 + rnd() * .03, .028, .028); m.compose(v.multiplyScalar(.78), q, s); org.setMatrixAt(i, m); } }
+  cell.add(org);
+  const tM = mem({ amp: .02, freq: 6, speed: .2, inner: [.2, .3, .4], rim: [.62, .9, .95], fill: .35 });
+  [[.9, .35, .2], [-.7, .6, -.3], [-.2, -.85, .45]].forEach((d, k) => { const dir = new T.Vector3(...d).normalize(), pts = []; for (let i = 0; i <= 5; i++) pts.push(dir.clone().multiplyScalar(1.08 + i * .22).add(new T.Vector3(Math.sin(i * .9 + k) * .08, Math.cos(i * .7 + k) * .08, 0))); const tb = new T.Mesh(new T.TubeGeometry(new T.CatmullRomCurve3(pts), 48, .018 - k * .002, 8, false), tM); tb.renderOrder = 2; cell.add(tb); });
+  // cytoplasm, chromatin and ambient dust as soft additive points
+  const N = 5200, pos = new Float32Array(N * 3), col = new Float32Array(N * 3), sz = new Float32Array(N), rr = new Float32Array(N);
+  const sph = () => { const u = rnd() * 2 - 1, a = rnd() * 6.283, r = Math.sqrt(1 - u * u); return [r * Math.cos(a), u, r * Math.sin(a)]; };
+  for (let i = 0; i < N; i++) { const k = rnd(), n = sph(); let r, c, s;
+    if (k < .5) { r = .45 + rnd() * .5; c = rnd() < .5 ? [.56, .83, .93] : [.26, .79, .71]; c = c.map(v => v * (.16 + rnd() * .2)); s = .5 + rnd() * .8; }
+    else if (k < .7) { r = Math.cbrt(rnd()) * .34; c = [.62, .55, .95].map(v => v * (.55 + rnd() * .45)); s = .9 + rnd(); }
+    else { r = 1.7 + rnd() * 3; c = [.93, .91, .86].map(v => v * (.12 + rnd() * .25)); s = .6 + rnd() * 1.5; }
+    pos.set([n[0] * r + (k >= .5 && k < .7 ? .08 : 0), n[1] * r, n[2] * r], i * 3); col.set(c, i * 3); sz[i] = s; rr[i] = rnd(); }
+  const pg = new T.BufferGeometry(); pg.setAttribute("position", new T.BufferAttribute(pos, 3)); pg.setAttribute("color", new T.BufferAttribute(col, 3)); pg.setAttribute("aSize", new T.BufferAttribute(sz, 1)); pg.setAttribute("aRnd", new T.BufferAttribute(rr, 1));
+  const pm = new T.ShaderMaterial({ transparent: true, depthWrite: false, blending: T.AdditiveBlending, vertexColors: true, uniforms: { uTime: { value: 0 }, uScale: { value: 10 } },
+    vertexShader: `uniform float uTime,uScale;attribute float aSize,aRnd;varying vec3 vC;void main(){vec3 p=position;float t=uTime*(.3+aRnd*.5)+aRnd*40.;p+=.012*vec3(sin(t),cos(t*1.3),sin(t*.7+1.));vec4 mv=modelViewMatrix*vec4(p,1.);gl_PointSize=aSize*uScale/-mv.z;vC=color;gl_Position=projectionMatrix*mv;}`,
+    fragmentShader: `varying vec3 vC;void main(){float r=length(gl_PointCoord-.5);if(r>.5)discard;float a=smoothstep(.5,0.,r);gl_FragColor=vec4(vC*a*a,1.);}` });
+  const pts = new T.Points(pg, pm); pts.frustumCulled = false; cell.add(pts);
+  const mats = [mF, mB, nM, oM, tM];
+  const mouse = new T.Vector2(), ms = new T.Vector2();
+  addEventListener("pointermove", e => mouse.set(e.clientX / innerWidth * 2 - 1, -(e.clientY / innerHeight * 2 - 1)));
+  const t1 = document.getElementById("t1"), t2 = document.getElementById("t2"), v = new T.Vector3();
+  function size() { const w = innerWidth, h = innerHeight; R.setSize(w, h, false); cam.aspect = w / h; cam.position.z = w / h < 1 ? 5.4 : 4.3; cam.updateProjectionMatrix(); pm.uniforms.uScale.value = h * Math.min(1.75, devicePixelRatio || 1) * .0115; }
+  size(); addEventListener("resize", size);
+  function place(el, p) { v.copy(p).applyMatrix4(cell.matrixWorld).project(cam); const x = (v.x * .5 + .5) * innerWidth, y = (-v.y * .5 + .5) * innerHeight - 6;
+    const flip = x + el.offsetWidth > innerWidth - 12; el.style.flexDirection = flip ? "row-reverse" : "row"; el.style.left = (flip ? x - el.offsetWidth + 7 : x) + "px"; el.style.top = y + "px";
+    el.style.opacity = (y < 10 || y > innerHeight - 40 || x < 10 || x > innerWidth - 10) ? 0 : 1; }
+  let time = 0, last = performance.now();
+  function frame(now) { const dt = Math.min(.05, (now - last) / 1000); last = now; if (!reduce) time += dt;
+    ms.lerp(mouse, Math.min(1, dt * 2.5));
+    cell.rotation.y = time * .07; cell.rotation.x = Math.sin(time * .1) * .08; cell.scale.setScalar(1 + .03 * Math.sin(time * .6)); org.rotation.y = -time * .05;
+    mats.forEach(m => { m.uniforms.uTime.value = time; m.uniforms.uLight.value.set(ms.x * 1.4 + .3, ms.y * 1.2 + .6, 1).normalize(); }); pm.uniforms.uTime.value = time;
+    cam.position.x = ms.x * .25; cam.position.y = ms.y * .15; cam.lookAt(0, 0, 0); cell.updateMatrixWorld();
+    place(t1, new T.Vector3(.1, .05, .36)); place(t2, new T.Vector3(.95, .38, .2).multiplyScalar(1.5));
+    R.render(scene, cam); if (!document.hidden) requestAnimationFrame(frame); }
+  document.addEventListener("visibilitychange", () => { if (!document.hidden) { last = performance.now(); requestAnimationFrame(frame); } });
+  requestAnimationFrame(frame);
+})();
+</script>
+</body></html>

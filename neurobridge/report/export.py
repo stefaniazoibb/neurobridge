@@ -18,7 +18,9 @@ def export_figures_png(figures: dict, out_dir: Path, ids: list[str], scale: floa
             continue
         p = out_dir / f"{fid}.png"
         try:
-            figures[fid].write_image(str(p), width=900, height=int(figures[fid].layout.height or 450), scale=scale)
+            from neurobridge.viz.theme import for_print
+
+            for_print(figures[fid]).write_image(str(p), width=900, height=int(figures[fid].layout.height or 450), scale=scale)
             paths[fid] = str(p)
         except Exception as exc:  # noqa: BLE001
             log_event(log, "export.figure_failed", figure=fid, error=str(exc))

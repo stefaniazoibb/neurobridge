@@ -8,7 +8,7 @@ from neurobridge.agents.llm import provider_status  # noqa: E402
 from neurobridge.agents.orchestrator import DEMO_QUESTION, Investigation  # noqa: E402
 from neurobridge.agents.planner import WORKFLOWS  # noqa: E402
 
-st.markdown("<div class='nb-eyebrow'>Module A</div>", unsafe_allow_html=True)
+st.markdown("<div class='nb-eyebrow'>Module A · Research Copilot</div>", unsafe_allow_html=True)
 st.title("Research Copilot")
 st.caption("An orchestrator coordinates seven specialised agents. Each agent chooses tools from the registry, and every tool call is logged with its inputs, outputs and limitations. Nothing is simulated: a step either ran, ran in degraded form, or failed and says so.")
 
