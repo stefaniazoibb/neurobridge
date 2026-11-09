@@ -1,0 +1,58 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "neurobridge"
+version = "0.1.0"
+description = "NeuroBridge: an agentic AI research platform for multimodal investigation of neuron-glioma interactions in glioblastoma."
+readme = "README.md"
+requires-python = ">=3.10"
+license = {text = "MIT"}
+authors = [{name = "Stefania Zoi"}]
+dependencies = [
+  "numpy>=1.26",
+  "pandas>=2.2",
+  "scipy>=1.12",
+  "scikit-learn>=1.4",
+  "statsmodels>=0.14",
+  "lifelines>=0.28",
+  "scanpy>=1.10",
+  "anndata>=0.10",
+  "gseapy>=1.1",
+  "leidenalg>=0.10",
+  "igraph>=0.11",
+  "plotly>=5.20",
+  "kaleido>=0.2",
+  "streamlit>=1.35",
+  "pydantic>=2.6",
+  "pydantic-settings>=2.2",
+  "requests>=2.31",
+  "httpx>=0.27",
+  "python-dotenv>=1.0",
+  "pyyaml>=6.0",
+  "markdown>=3.6",
+  "reportlab>=4.1",
+  "tabulate>=0.9",
+  "h5py>=3.10",
+  "pyarrow>=14",
+]
+
+[project.optional-dependencies]
+llm = ["anthropic>=2.0"]
+dev = ["pytest>=8", "pytest-cov>=5", "ruff>=0.4"]
+
+[tool.setuptools.packages.find]
+include = ["neurobridge*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
+markers = [
+  "network: tests that need internet access",
+  "slow: tests that take more than ~30 s",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
