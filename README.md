@@ -178,6 +178,10 @@ scripts/         fetch_data.py, run_demo.py
 - An MCP server exposing the tool registry, and LLM-driven tool selection over the same typed tools.
 - Additional cohorts (CPTAC-GBM proteomics, GLASS longitudinal) and drug–target links (ChEMBL, Open Targets) for candidate genes.
 
+## Website
+
+`site/` contains the public website: an immersive WebGL journey from the brain to a glioblastoma cell to the evidence, followed by the real data, agents, validation results and platform screenshots. See [site/README.md](site/README.md) for how it is built and deployed. The research application stays in `app/`.
+
 ## Demo
 
 A five-minute presentation script for an R&D or recruiting audience is in [docs/DEMO_SCRIPT.md](docs/DEMO_SCRIPT.md).
