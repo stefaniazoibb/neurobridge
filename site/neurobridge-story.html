@@ -1,0 +1,561 @@
+<title>NeuroBridge</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,300..800&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,500;1,8..60,400&display=swap">
+<style>
+/* Concept: a printed scientific plate. Paper, ink and a 12-column grid; colour is reserved for data
+   (histology-derived hues). Every visual is a numbered figure with a caption. Single light theme by design. */
+:root {
+  --paper: #f3f3ef; --sheet: #fbfbf8; --ink: #121417; --ink-2: #4a4d52; --ink-3: #7b7e82; --rule: #d6d7d0;
+  --neuron: #1d7a66; --tumour: #c33d26; --signal: #c99300; --immune: #3557b0;
+  --display: "Archivo", "Helvetica Neue", Helvetica, Arial, sans-serif;
+  --text: "Source Serif 4", "Iowan Old Style", Georgia, serif;
+  --s-1: .8rem; --s0: 1.06rem; --s1: 1.3rem; --s3: clamp(2.2rem, 4.6vw, 3.4rem); --s4: clamp(2.8rem, 7.2vw, 5.8rem);
+  color-scheme: light;
+}
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body { background: var(--paper); color: var(--ink); font-family: var(--text); font-size: var(--s0); line-height: 1.58; -webkit-font-smoothing: antialiased; }
+::selection { background: color-mix(in srgb, var(--signal) 35%, transparent); }
+a { color: inherit; text-decoration-thickness: 1px; text-underline-offset: 3px; }
+a:hover { text-decoration-color: var(--tumour); }
+:focus-visible { outline: 2px solid var(--immune); outline-offset: 3px; }
+.grid { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); column-gap: clamp(16px, 2.4vw, 32px); max-width: 1240px; margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+.label { font-family: var(--display); font-stretch: 85%; font-weight: 600; font-size: var(--s-1); letter-spacing: .04em; color: var(--ink-2); }
+.g { font-family: var(--display); font-stretch: 80%; font-weight: 600; font-size: .92em; letter-spacing: .02em; }
+h1, h2, h3 { font-family: var(--display); margin: 0; text-wrap: balance; }
+h1 { font-size: var(--s4); font-weight: 750; font-stretch: 72%; line-height: .94; letter-spacing: -.01em; }
+h2 { font-size: var(--s3); font-weight: 700; font-stretch: 75%; line-height: 1; }
+h3 { font-size: var(--s1); font-weight: 650; font-stretch: 88%; line-height: 1.15; }
+p { margin: 0 0 1em; }
+.lede { font-size: var(--s1); line-height: 1.45; max-width: 34em; }
+.muted { color: var(--ink-2); }
+
+.top { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 20; background: color-mix(in srgb, var(--paper) 92%, transparent); backdrop-filter: blur(6px); border-bottom: 1px solid var(--rule); }
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 30; background: var(--paper); }
+.top .grid { align-items: center; padding-block: 12px; }
+.mark { grid-column: 1 / span 4; display: flex; align-items: center; gap: 10px; text-decoration: none; }
+.mark b { font-family: var(--display); font-stretch: 80%; font-weight: 750; font-size: 1.15rem; }
+.nav { grid-column: 5 / -1; display: flex; justify-content: flex-end; gap: clamp(12px, 2.4vw, 28px); }
+.nav a { font-family: var(--display); font-stretch: 85%; font-weight: 550; font-size: .86rem; text-decoration: none; color: var(--ink-2); }
+.nav a:hover, .nav a.on { color: var(--ink); text-decoration: underline; text-decoration-color: var(--tumour); }
+.progress { position: absolute; left: 0; bottom: -1px; height: 2px; width: 0; background: var(--ink); }
+
+section { padding-block: clamp(64px, 10vw, 128px); border-bottom: 1px solid var(--rule); }
+.sec-head { grid-column: 1 / -1; display: grid; grid-template-columns: subgrid; align-items: end; margin-bottom: clamp(24px, 3vw, 36px); }
+.sec-no { grid-column: 1 / span 2; font-family: var(--display); font-stretch: 70%; font-weight: 300; font-size: var(--s3); line-height: 1; color: var(--ink-3); }
+.sec-head h2 { grid-column: 3 / span 8; }
+.sec-body { grid-column: 3 / span 7; margin-bottom: clamp(24px, 3vw, 40px); }
+
+figure { margin: 0; }
+.plate { background: var(--sheet); border: 1px solid var(--rule); }
+figcaption { font-size: .9rem; line-height: 1.45; color: var(--ink-2); padding-top: 12px; max-width: 46em; }
+figcaption b { font-family: var(--display); font-stretch: 85%; font-weight: 700; color: var(--ink); margin-right: .35em; }
+svg.fig { width: 100%; height: auto; display: block; overflow: visible; }
+svg.fig text { font-family: var(--display); font-stretch: 85%; font-size: 12.5px; fill: var(--ink-2); }
+svg.fig .t-ink { fill: var(--ink); font-weight: 600; }
+svg.fig .rule { stroke: var(--rule); stroke-width: 1; }
+svg.fig .zero { stroke: var(--ink); stroke-width: 1; }
+svg.fig .ci, svg.fig .pt { transition: all 1s cubic-bezier(.65,.05,.25,1); }
+.num { font-variant-numeric: tabular-nums lining-nums; }
+
+.title { padding-block: clamp(40px, 7vw, 88px) clamp(56px, 8vw, 104px); }
+.title-text { grid-column: 1 / span 6; align-self: center; }
+.kicker { font-family: var(--display); font-stretch: 90%; font-weight: 550; font-size: .95rem; color: var(--ink-2); margin-bottom: 22px; }
+.title h1 { margin-bottom: 26px; }
+.title .lede { margin-bottom: 30px; }
+.manifest { width: 100%; border-collapse: collapse; font-size: .92rem; max-width: 34em; }
+.manifest th { text-align: left; font-family: var(--display); font-stretch: 85%; font-weight: 600; font-size: .78rem; letter-spacing: .03em; color: var(--ink-3); padding: 0 12px 6px 0; border-bottom: 1px solid var(--ink); }
+.manifest td { padding: 7px 12px 7px 0; border-bottom: 1px solid var(--rule); vertical-align: top; }
+.manifest td:nth-child(2) { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.title-fig { grid-column: 7 / -1; }
+.title-fig canvas { width: 100%; aspect-ratio: 5 / 6; display: block; }
+
+.syn-wrap { grid-column: 1 / -1; display: grid; grid-template-columns: subgrid; align-items: start; }
+.syn-fig { grid-column: 1 / span 6; position: sticky; top: calc(env(safe-area-inset-top, 0px) + 76px); }
+.steps { grid-column: 8 / span 5; display: grid; gap: 26vh; padding-block: 8vh 26vh; counter-reset: s; }
+.step { display: grid; grid-template-columns: 34px minmax(0, 1fr); column-gap: 14px; color: var(--ink-3); transition: color .35s; }
+.step::before { counter-increment: s; content: counter(s); font-family: var(--display); font-stretch: 75%; font-weight: 700; font-size: 1.05rem; width: 30px; height: 30px; border: 1.5px solid currentColor; border-radius: 50%; display: grid; place-items: center; }
+.step h3 { margin: 3px 0 8px; color: inherit; }
+.step p { color: var(--ink-2); }
+.step .ref { font-size: .82rem; color: var(--ink-3); }
+.step.on { color: var(--ink); }
+
+.flow { grid-column: 1 / -1; }
+.flow svg text.node-t { font-weight: 700; fill: var(--ink); font-size: 14px; }
+.cols3 { grid-column: 3 / -1; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: clamp(20px, 3vw, 40px); margin-top: 40px; }
+.cols3 h3 { font-size: 1.05rem; margin-bottom: 6px; }
+.cols3 p { font-size: .95rem; color: var(--ink-2); }
+
+.fig-main { grid-column: 3 / -1; }
+.fig-cap-main { grid-column: 3 / -1; }
+.fig-a { grid-column: 3 / span 5; margin-top: 48px; }
+.fig-b { grid-column: 8 / span 5; margin-top: 48px; }
+.fig-head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 10px 24px; padding: 18px 20px 0; }
+.fig-head .label { color: var(--ink); }
+.fig-inner { padding: 8px 20px 18px; }
+.seg { display: inline-flex; border: 1px solid var(--ink); }
+.seg button { font-family: var(--display); font-stretch: 85%; font-weight: 600; font-size: .82rem; padding: 7px 12px; border: 0; background: transparent; color: var(--ink); cursor: pointer; }
+.seg button[aria-pressed="true"] { background: var(--ink); color: var(--sheet); }
+.verdict { font-family: var(--display); font-stretch: 85%; font-weight: 650; font-size: .86rem; display: inline-flex; align-items: center; gap: 8px; margin: 6px 0 0; }
+.verdict::before { content: ""; width: 9px; height: 9px; background: var(--neuron); }
+.verdict.no::before { background: var(--tumour); }
+
+.tis-fig { grid-column: 1 / span 7; }
+.tis-fig .plate { padding: 14px; }
+#spotmap { width: 100%; display: block; }
+.tis-side { grid-column: 9 / span 4; align-self: start; position: sticky; top: calc(env(safe-area-inset-top, 0px) + 80px); }
+.layers { list-style: none; margin: 0 0 22px; padding: 0; border-top: 1px solid var(--ink); }
+.layers button { width: 100%; display: grid; grid-template-columns: 14px minmax(0, 1fr) auto; gap: 12px; align-items: center; text-align: left; background: none; border: 0; border-bottom: 1px solid var(--rule); padding: 11px 0; cursor: pointer; font: inherit; color: var(--ink-2); }
+.layers .sw { width: 14px; height: 14px; }
+.layers .nm { font-family: var(--display); font-stretch: 85%; font-weight: 600; font-size: .95rem; }
+.layers .kd { font-family: var(--display); font-stretch: 85%; font-size: .8rem; color: var(--ink-3); }
+.layers button[aria-pressed="true"] { color: var(--ink); }
+.layers button[aria-pressed="true"] .nm { text-decoration: underline; text-decoration-color: var(--tumour); text-underline-offset: 4px; }
+.key { display: flex; flex-wrap: wrap; gap: 6px 18px; font-family: var(--display); font-stretch: 85%; font-size: .8rem; color: var(--ink-2); padding-top: 10px; }
+.key i { display: inline-block; width: 10px; height: 10px; margin-right: 6px; vertical-align: -1px; }
+.ramp { height: 6px; margin-top: 6px; }
+.layer-note { min-height: 8em; }
+.layer-note h3 { margin-bottom: 8px; }
+
+.fig-cells { grid-column: 3 / -1; }
+.ev { grid-column: 3 / -1; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr); gap: clamp(24px, 4vw, 56px); align-items: start; }
+
+footer { padding-block: 48px 72px; }
+footer .c1 { grid-column: 1 / span 4; } footer .c2 { grid-column: 5 / span 4; } footer .c3 { grid-column: 9 / span 4; }
+footer p { font-size: .88rem; color: var(--ink-2); }
+footer .label { display: block; margin-bottom: 8px; color: var(--ink); }
+
+@media (max-width: 900px) {
+  .title-text, .title-fig, .syn-fig, .steps, .fig-main, .fig-cap-main, .fig-a, .fig-b, .tis-fig, .tis-side, .fig-cells, .ev, .cols3, .sec-body, footer .c1, footer .c2, footer .c3 { grid-column: 1 / -1; }
+  .sec-no { grid-column: 1 / -1; margin-bottom: 8px; } .sec-head h2 { grid-column: 1 / -1; }
+  .title-fig { margin-top: 40px; }
+  .syn-fig, .tis-side { position: relative; top: 0; }
+  .tis-side { margin-top: 28px; }
+  .steps { gap: 30px; padding-block: 32px 0; } .step { color: var(--ink); }
+  .cols3, .ev { grid-template-columns: minmax(0, 1fr); }
+  .nav { display: none; } .mark { grid-column: 1 / -1; }
+  .fig-a, .fig-b { margin-top: 28px; }
+}
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } *, *::before, *::after { transition-duration: 0s !important; } }
+</style>
+
+<header class="top">
+  <div class="grid">
+    <a class="mark" href="#top" aria-label="NeuroBridge, back to top">
+      <svg width="30" height="20" viewBox="0 0 30 20" aria-hidden="true"><circle cx="6" cy="10" r="4.5" fill="none" stroke="#121417" stroke-width="1.6"/><circle cx="24" cy="10" r="5.5" fill="#c33d26"/><path d="M10.5 10 H17" stroke="#121417" stroke-width="1.6"/><circle cx="17.6" cy="10" r="1.3" fill="#c99300"/></svg>
+      <b>NeuroBridge</b>
+    </a>
+    <nav class="nav" aria-label="Sections">
+      <a href="#biology">Biology</a><a href="#platform">Platform</a><a href="#findings">Findings</a><a href="#tissue">Tissue</a><a href="#evidence">Evidence</a>
+    </nav>
+  </div>
+  <div class="progress" id="progress"></div>
+</header>
+
+<section class="title" id="top">
+  <div class="grid">
+    <div class="title-text">
+      <p class="kicker">A research platform for cancer neuroscience</p>
+      <h1>Neuron–glioma coupling, tested in patient data</h1>
+      <p class="lede">Experiments show that neurons form synapses onto glioblastoma cells and drive their growth. NeuroBridge asks whether that biology is visible in patients: seven agents plan the analysis, run it on public cohorts, single cells and tissue, and grade each conclusion by what the evidence can support.</p>
+      <table class="manifest" aria-label="Data analysed">
+        <thead><tr><th>Data</th><th>n</th><th>Role</th></tr></thead>
+        <tbody>
+          <tr><td>TCGA-GBM RNA-seq</td><td>154 tumours</td><td>discovery</td></tr>
+          <tr><td>CGGA mRNAseq 325 and 693</td><td>225 tumours</td><td>independent validation</td></tr>
+          <tr><td>GSE84465 single cells</td><td>3,589 cells</td><td>cell-type localisation</td></tr>
+          <tr><td>10x Visium section</td><td>3,462 spots</td><td>tissue context, one patient</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <figure class="title-fig">
+      <div class="plate"><canvas id="net" aria-label="Animated schematic of neurons signalling to a network of glioma cells" role="img"></canvas></div>
+      <figcaption><b>Fig. 1</b>Schematic. Action potentials (ochre) travel from neurons (green) to glioma cells (red). Each arrival triggers a calcium transient that spreads through the tumour network along connecting microtubes. Illustration, not data.</figcaption>
+    </figure>
+  </div>
+</section>
+
+<section id="biology">
+  <div class="grid">
+    <div class="sec-head"><span class="sec-no">01</span><h2>The biology under test</h2></div>
+    <div class="sec-body"><p class="lede">Five genes describe how neurons signal to tumour cells. NeuroBridge treats them as hypotheses to test, not as biomarkers.</p></div>
+    <div class="syn-wrap">
+      <figure class="syn-fig">
+        <div class="plate">
+          <svg class="fig" id="syn" viewBox="0 0 560 470" role="img" aria-labelledby="syn-t"><title id="syn-t">Technical drawing of a neuron-to-glioma synapse with five numbered callouts.</title></svg>
+        </div>
+        <figcaption><b>Fig. 2</b>Neuron-to-glioma synapse. Numbers match the steps alongside. Drawn after Venkatesh et al. 2019 and Venkataramani et al. 2019.</figcaption>
+      </figure>
+      <div class="steps">
+        <div class="step on" data-step="1"><div><h3>Glutamate release</h3><p>Neurons load glutamate into vesicles with the transporter <span class="g">SLC17A7</span> (VGLUT1) and release it when they fire.</p><p class="ref">Venkataramani et al., Nature 2019 · <a href="https://pubmed.ncbi.nlm.nih.gov/31534219/">PMID 31534219</a></p></div></div>
+        <div class="step" data-step="2"><div><h3>AMPA receptors on tumour cells</h3><p>Glioma cells carry AMPA receptors (<span class="g">GRIA1</span>, <span class="g">GRIA2</span>). Synaptic currents depolarise them and promote invasion and growth.</p><p class="ref">Venkatesh et al., Nature 2019 · <a href="https://pubmed.ncbi.nlm.nih.gov/31534222/">PMID 31534222</a></p></div></div>
+        <div class="step" data-step="3"><div><h3>NMDA signalling</h3><p>The NMDA subunit <span class="g">GRIN2B</span> provides a calcium-permeable route that supports tumour growth in the brain.</p><p class="ref">Zeng et al., Nature 2019 · <a href="https://pubmed.ncbi.nlm.nih.gov/31534217/">PMID 31534217</a></p></div></div>
+        <div class="step" data-step="4"><div><h3>Neuroligin-3 shedding</h3><p>Activity releases a soluble form of <span class="g">NLGN3</span>, which acts as a growth signal for glioma cells.</p><p class="ref">Venkatesh et al., Cell 2015 · <a href="https://pubmed.ncbi.nlm.nih.gov/25913192/">PMID 25913192</a></p></div></div>
+        <div class="step" data-step="5"><div><h3>BDNF–TrkB plasticity</h3><p><span class="g">BDNF</span> acting on TrkB (<span class="g">NTRK2</span>) adds AMPA receptors to the tumour side and strengthens the synapse.</p><p class="ref">Taylor et al., Nature 2023 · <a href="https://pubmed.ncbi.nlm.nih.gov/37914930/">PMID 37914930</a></p></div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="platform">
+  <div class="grid">
+    <div class="sec-head"><span class="sec-no">02</span><h2>How the platform works</h2></div>
+    <div class="sec-body"><p class="lede">An orchestrator runs seven agents in order. Each calls typed tools, and every call is logged with its inputs, outputs and limitations.</p></div>
+    <figure class="flow">
+      <div class="plate" style="padding:18px 20px 6px"><svg class="fig" id="flow" viewBox="0 0 1200 160" role="img" aria-label="Flow diagram of seven agents from Hypothesis to Reviewer"></svg></div>
+      <figcaption><b>Fig. 3</b>Agent pipeline in the reference run: 31 tool calls, none failed, 19 graded claims and 45 references retrieved from Europe PMC.</figcaption>
+    </figure>
+    <div class="cols3">
+      <div><h3>Typed tools</h3><p>Seventeen tools with validated input schemas. The registry exports them in the Model Context Protocol format.</p></div>
+      <div><h3>Claims from results</h3><p>Every sentence with a number is written from a computed result, never by the language model.</p></div>
+      <div><h3>A reviewer that says no</h3><p>Causal wording, single-cohort "validation" and composition bias are flagged before the report is written.</p></div>
+    </div>
+  </div>
+</section>
+
+<section id="findings">
+  <div class="grid">
+    <div class="sec-head"><span class="sec-no">03</span><h2>What the patient data show</h2></div>
+    <div class="sec-body"><p class="lede">The candidate-gene score separates Proneural from Mesenchymal tumours in all three cohorts. The difference disappears once normal brain tissue in the sample is accounted for.</p></div>
+    <figure class="fig-main plate">
+      <div class="fig-head">
+        <span class="label">Mesenchymal vs Proneural, IDH-wildtype tumours</span>
+        <div class="seg" role="group" aria-label="Score">
+          <button id="segRaw" aria-pressed="true">Candidate score</button>
+          <button id="segAdj" aria-pressed="false">Adjusted for normal brain</button>
+        </div>
+      </div>
+      <div class="fig-inner">
+        <svg class="fig" id="subChart" viewBox="0 0 860 240" role="img" aria-label="Forest plot of Hedges g in three cohorts"></svg>
+        <p class="verdict" id="subVerdict">Replicated in 2 of 2 independent cohorts</p>
+      </div>
+    </figure>
+    <figcaption class="fig-cap-main"><b>Fig. 4a</b>Effect size (Hedges' g, 95% CI) of the six-gene score, Mesenchymal minus Proneural. CGGA subtypes are assigned by a classifier trained on TCGA alone, with all candidate genes removed from its inputs (cross-validated balanced accuracy 0.82). Adjusted: score residualised on eight mature-neuron marker genes.</figcaption>
+    <figure class="fig-a">
+      <div class="plate"><div class="fig-head"><span class="label">Correlation with neuron markers</span></div><div class="fig-inner"><svg class="fig" id="compChart" viewBox="0 0 400 184" role="img" aria-label="Spearman correlation: TCGA 0.71, CGGA-325 0.67, CGGA-693 0.81"></svg></div></div>
+      <figcaption><b>Fig. 4b</b>Spearman ρ between the candidate score and mature-neuron markers. Bulk samples carry varying amounts of normal cortex, and the score largely measures it.</figcaption>
+    </figure>
+    <figure class="fig-b">
+      <div class="plate"><div class="fig-head"><span class="label">Overall survival</span><span class="verdict no" style="margin:0">Not replicated</span></div><div class="fig-inner"><svg class="fig" id="survChart" viewBox="0 0 400 184" role="img" aria-label="Hazard ratios: TCGA 1.16, CGGA-325 0.75, CGGA-693 0.95"></svg></div></div>
+      <figcaption><b>Fig. 4c</b>Adjusted Cox hazard ratio per SD of the score, log scale. The one significant estimate points the opposite way to discovery and is reported as heterogeneity.</figcaption>
+    </figure>
+  </div>
+</section>
+
+<section id="tissue">
+  <div class="grid">
+    <div class="sec-head"><span class="sec-no">04</span><h2>Where the genes sit in tissue</h2></div>
+    <div class="sec-body"><p class="lede">Bulk data mix tumour and brain. A spatial section keeps them apart. Each hexagon is one measured 55 µm spot.</p></div>
+    <figure class="tis-fig">
+      <div class="plate"><canvas id="spotmap" role="img" aria-label="Map of 3,462 Visium spots coloured by the selected layer"></canvas><div class="key" id="mapKey"></div></div>
+      <figcaption><b>Fig. 5</b>10x Genomics Visium, human glioblastoma (Space Ranger 1.2.0, CC BY 4.0). One section from one patient, so these are case observations.</figcaption>
+    </figure>
+    <div class="tis-side">
+      <ul class="layers">
+        <li><button data-layer="domains" aria-pressed="true"><span class="sw" style="background:linear-gradient(90deg,#1d7a66 25%,#c33d26 25% 50%,#3557b0 50% 75%,#c99300 75%)"></span><span class="nm">Tissue domains</span><span class="kd">clusters</span></button></li>
+        <li><button data-layer="neuron" aria-pressed="false"><span class="sw" style="background:#1d7a66"></span><span class="nm">Neuron programme</span><span class="kd">8 markers</span></button></li>
+        <li><button data-layer="SLC17A7" aria-pressed="false"><span class="sw" style="background:#c99300"></span><span class="nm">SLC17A7</span><span class="kd">presynaptic</span></button></li>
+        <li><button data-layer="GRIA2" aria-pressed="false"><span class="sw" style="background:#c33d26"></span><span class="nm">GRIA2</span><span class="kd">postsynaptic</span></button></li>
+        <li><button data-layer="GAP43" aria-pressed="false"><span class="sw" style="background:#1d7a66"></span><span class="nm">GAP43</span><span class="kd">microtubes</span></button></li>
+      </ul>
+      <div class="layer-note" id="layerNote"></div>
+    </div>
+  </div>
+</section>
+
+<section id="cells">
+  <div class="grid">
+    <div class="sec-head"><span class="sec-no">05</span><h2>Which cells make the transcripts</h2></div>
+    <div class="sec-body"><p class="lede">Receptor genes are detected in a minority of tumour cells. The presynaptic transporter is absent from them, as expected.</p></div>
+    <figure class="fig-cells">
+      <div class="plate"><div class="fig-inner" style="padding-top:20px"><svg class="fig" id="scChart" viewBox="0 0 860 250" role="img" aria-label="Detection in neoplastic cells: NLGN3 37%, GRIA2 29%, GRIA1 17%, BDNF 3%, GRIN2B 1%, SLC17A7 0%"></svg></div></div>
+      <figcaption><b>Fig. 6</b>Share of neoplastic cells with at least one read of each gene. GSE84465, 1,064 neoplastic cells from four patients (Darmanis et al. 2017).</figcaption>
+    </figure>
+  </div>
+</section>
+
+<section id="evidence">
+  <div class="grid">
+    <div class="sec-head"><span class="sec-no">06</span><h2>How far the evidence goes</h2></div>
+    <div class="ev">
+      <div>
+        <p class="lede">Observational transcriptomes can show an association. They cannot show a mechanism or a cause, and NeuroBridge states that limit in every report.</p>
+        <p class="muted">For a drug-discovery team the result is a decision: bulk RNA signatures are the wrong readout for neuron–glioma coupling. Spatial and functional readouts across many patients are where the question should go next.</p>
+      </div>
+      <figure>
+        <svg class="fig" id="ladder" viewBox="0 0 520 300" role="img" aria-label="Evidence scale from plausibility to causal, with the association level reached"></svg>
+        <figcaption><b>Fig. 7</b>Evidence levels. Filled: reached by a confirmatory analysis in this run. Solid outline: supported by the cited experiments or by exploratory data only. Dashed: out of reach for this design.</figcaption>
+      </figure>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="grid">
+    <div class="c1"><span class="label">NeuroBridge</span><p>Built by Stefania Zoi. Python, scanpy, lifelines, Streamlit and Claude. Research exploration only, not for diagnosis or treatment.</p></div>
+    <div class="c2"><span class="label">Data</span><p>TCGA-GBM via UCSC Xena · Chinese Glioma Genome Atlas · GEO GSE84465 · 10x Genomics Visium Human Glioblastoma · Europe PMC.</p></div>
+    <div class="c3"><span class="label">Method</span><p>Effect sizes with confidence intervals, false-discovery control, Cox models with assumption checks, and replication required in independent cohorts.</p></div>
+  </div>
+</footer>
+
+<script>window.NB_SPATIAL={"n": 3462, "layers": ["neuron", "cand", "GRIA2", "SLC17A7", "GAP43", "tumour"], "domains": ["neuron-enriched", "tumour_glial-enriched", "myeloid-enriched", "vascular-enriched"], "domainCounts": [304, 1653, 1083, 422], "rowMax": 77, "colMax": 116, "b64": "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AQEBAAEBAQEBAwEBAAIDAwIBAgABAgICAgEDAQIBAQIBAQIAAQMBAQMCAQECAwICAQMAAgEDAQIBAQMAAQEBAQMCAgMBAAMCAQEBAgICAQEBAwEDAAEBAgECAwICAQIDAwADAQEBAQEAAQABAQEDAAECAgIBAwEDAgICAgIBAQEBAgIAAwECAgIDAQIDAAEBAAECAgEBAQIBAgICAgECAgIBAwMBAQIAAgIBAgICAgIAAQIBAwIBAQEBAQEBAQICAgIBAQACAQIAAQADAQMBAAEBAgEBAQEBAgIBAAEDAgECAQECAQIBAAEDAAIBAQEBAwIBAAEBAgIBAQIBAgABAgMDAgMCAQEAAQEDAQECAQEBAwEBAQEBAQEBAQICAgEBAQMBAAECAwECAAACAAECAwMCAQMCAQIBAQEBAQMBAgICAgEBAQEBAwEAAgEBAwECAAIBAQEBAgACAQECAQABAAMAAQEBAQMBAQECAgEBAQEAAgECAQECAwEBAwIBAgEBAQECAQEBAQICAQEBAQMBAgEAAgIDAgIDAgABAQIBAwIDAQEBAQAAAQECAgMCAQEBAQICAgIBAQEDAQIBAgEDAQABAwEBAQEDAQEBAQEBAgECAQICAgECAQEAAQADAwEBAQEDAgACAQICAwECAgIBAgIBAgMDAgECAQEBAwIBAwECAQECAgEAAQEDAgECAgECAAECAwIDAgICAQIBAwECAgEAAAEBAQEAAgEBAAECAwMCAgEBAQACAQIAAQIBAgIBAAMBAgMBAwEBAgICAgIBAgEDAQIAAAIBAgMDAwECAwIBAQABAQEBAwICAwECAgMCAQMCAQEBAQIBAQMCAgIBAAIBAQEBAQECAQICAQMDAgIDAgIBAQACAQEDAwMCAgICAgMCAQEBAQECAgACAQIBAgECAQABAgIBAgIDAQEBAwECAAIBAwIBAwMDAQECAwEDAgIBAgABAQEBAQEDAQEDAQMCAgEBAQEBAgEBAQEBAQEBAAEDAwIAAQEBAwMDAgIBAgECAwMCAQEDAQEDAgMDAgMBAgICAgIDAQIAAgECAAICAQIDAQEDAgEDAgECAgEDAgMCAQADAgIBAQIBAQICAwEBAwEBAQEAAgEBAwECAQECAgMBAwEAAwECAQIBAQECAgICAwIBAgIBAQECAwIAAQEBAQIBAwIBAgEBAQMBAgIAAAEBAQIBAgIBAQICAQIAAQIBAQEBAgABAgICAQMBAgIBAgABAwIBAQMCAgEBAAIBAgEBAQECAgMBAQEDAQAAAwEBAwEBAwECAQIBAgICAQICAQEDAQEBAQACAgICAAMCAwEBAQECAwEBAQMBAQMBAwEBAQICAQIBAQIBAQIBAgEBAQEDAgEBAgECAQIBAQECAQECAgIBAgEBAQADAAICAQMDAwEBAQEDAQEAAQEBAQMBAQIBAgECAwECAQIDAAECAgEDAwADAQEBAAIBAAECAQEBAQMBAgMAAQICAgEBAwECAwICAwEBAgACAAEDAwEBAwEBAgIBAQECAgECAQECAgIDAwIBAgECAgEBAAECAgIBAgADAQMCAQMBAQIBAQACAgEBAQIAAgICAwEBAQABAQEBAQIBAwEAAQEBAQECAQACAQICAQEBAQEBAgIBAQECAgECAQEBAQEDAQECAQICAgECAAECAQIDAQEBAwICAgIBAQEBAgIBAQEAAwEBAQIBAQACAQEBAgECAQECAQEDAAIBAQIDAgIBAQIBAQMBAgECAQECAgEAAQECAwABAQEBAAEBAwECAgMCAwEDAQEBAgIBAgACAgEAAwEDAQAAAQIBAQEBAQECAgEBAwABAQIBAwECAQMCAgAAAQEBAwIBAQECAwIBAgECAgACAQICAAEDAQADAQEAAgEDAgACAQEDAQICAQABAAEBAgECAgECAwICAQEBAAICAwEBAgEBAQEBAgEBAgEDAQIBAgIBAQEAAgEBAAICAQIBAgECAgEBAgECAQEAAQEBAgEBAQEDAgIBAQEBAQIBAQICAwICAwABAgECAAECAwMDAAACAgECAQICAwMCAQIBAQIBAQECAQICAgEDAAEBAgECAQIBAQIAAAICAwEBAQEDAQABAQECAgICAgICAQEDAQEBAQMCAQACAQMBAwECAQIBAQEBAQEAAgEBAgEBAAEBAgEBAgEBAQICAQEDAgECAQIBAQEBAQEBAQABAgIBAQICAQMDAQIBAQIDAQEBAwEAAQIBAgECAQECAQICAQMCAgMBAAADAAECAQIBAQEBAgABAQICAgICAQABAgEBAQABAQIBAwECAgEBAQMBAQEBAgIBAQECAQADAQECAQABAgECAQICAAIAAQEBAQEBAQEBAQIBAQEBAQIBAgMBAQEDAgMBAgEBAAIBAQECAAEBAQIDAgEAAQEDAgEBAgECAAIBAgICAwEDAgECAgEBAQEBAQIBAgEBAQMCAgIBAQEBAQECAgICAQEBAQIBAQIBAQMBAgEBAQABAQEDAQEBAAMAAwEAAgEBAQECAQMAAgECAwECAgEAAgABAQEBAQECAAEDAAMCAQEBAQEBAQIAAgEBAQMAAgABAQABAQACAQECAwEDAgEBAAIBAgECAQECAwICAQEAAgMBAQABAQECAgABAQMBAQEBAQABAQIBAgMBAgEBAQEBAwECAQECAQECAQEAAQEDAwEBAgADAQIBAgEAAQMBAQICAQEDAQIBAQABAwEBAgECAgEBAQICAQECAQECAgEDAQIDAwIBAgIAAQECAgEBAQMBAQIBAgECAwECAQEBAQECAwEDAgAAAwECAgECAQABAgEBAgECAgMBAQIAAQICAQICAQIAAgECAQECAQICAgEAAQIDAgMBAwMBAQECAQICAAEBAAIBAQEBAwABAwMCAwIBAQEBAQEBAQECAQIAAwECAQABAQIDAwEBAQEBAAEBAgIBAQIDAQECAQMBAgEAAQIBAQIBAQMBAQIBAQECAQIBAQECAQIAAQIBAAMBAwIBAQECAQEBAgACAQIBAwICAQMBAQEBAwACAgABAgIBAgEAAQEBAQIBAwEBAgABAgMBAQMBAAICAQECAgEBAwEBAgICAgEBAQIBAgABAQIDAQACAQECAQACAAACAQMBAgECAwABAgEBAQECAQECAQIBAQEBAQEBAQEBAAEDAAADAAEAAQMCAAMAAQMBAwABAQECAQACAQEBAQECAgEDAAECAQAAAgECAgECAQEBAwEDAAABAgIBAQIBAQEBAQMBAQEBAgEBAgMBAwIBAQEBAQIBAQEBAwECAwEBAQICAwECAwICAQEAAgIBAgICAgICAgICAQEBAQMBAQEBAgIBAQACAwICAQEAAQMBAQIBAQMCAgEAAgEAAwEBAgICAQEDAgIBAQACAQEAAQMDAAABAgMCAQEBAgEBAgIAAAEBAgECAAEAAQIBAQEDAQEBAgECAQICAQICAQECAwIBAgECAQICAQECAwICAwEBAgIBAgEDAAEBAgMAAQECAwEBAQICAQECAgIBAgICAgEBAQEBAQIBAgIAAgICAQACAAIBAwIAAwIDAgIBAQMCAgIBAQIBAgECAQIDAQECAQMBAQICAQID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"};</script>
+<script>
+(() => {
+  const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const css = (n) => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+  const C = { ink: css("--ink"), ink2: css("--ink-2"), ink3: css("--ink-3"), rule: css("--rule"), sheet: css("--sheet"), neuron: css("--neuron"), tumour: css("--tumour"), signal: css("--signal"), immune: css("--immune") };
+  const NS = "http://www.w3.org/2000/svg";
+  const el = (tag, attrs, parent, text) => { const e = document.createElementNS(NS, tag); for (const k in attrs) if (attrs[k] !== "") e.setAttribute(k, attrs[k]); if (text != null) e.textContent = text; if (parent) parent.appendChild(e); return e; };
+  const rng = (() => { let s = 11; return () => (s = (s * 16807) % 2147483647) / 2147483647; })();
+  const dpr = Math.min(2, window.devicePixelRatio || 1);
+  const minus = v => String(v).replace("-", "−");
+
+  /* header progress + active section */
+  const prog = document.getElementById("progress"), navs = [...document.querySelectorAll(".nav a")];
+  const secs = navs.map(a => document.querySelector(a.getAttribute("href")));
+  addEventListener("scroll", () => {
+    const h = document.documentElement; prog.style.width = (100 * h.scrollTop / Math.max(1, h.scrollHeight - h.clientHeight)) + "%";
+    let k = -1; secs.forEach((s, i) => { if (s.getBoundingClientRect().top < innerHeight * 0.4) k = i; });
+    navs.forEach((a, i) => a.classList.toggle("on", i === k));
+  }, { passive: true });
+
+  /* Fig 1: line-drawing network */
+  const cv = document.getElementById("net"), cx = cv.getContext("2d");
+  let W, H, neurons, cells, axons, tubes, spikes = [];
+  function build() {
+    W = cv.clientWidth; H = cv.clientHeight; cv.width = W * dpr; cv.height = H * dpr; cx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    neurons = []; cells = []; axons = []; tubes = [];
+    for (let i = 0; i < 6; i++) {
+      const n = { x: W * (0.12 + (i + rng() * 0.8) / 6 * 0.76), y: H * (0.14 + rng() * 0.24), r: 4.5, branches: [] };
+      for (let d = 0; d < 6; d++) n.branches.push([-Math.PI / 2 + (rng() - .5) * 2.6, 16 + rng() * 26, (rng() - .5) * .9]);
+      neurons.push(n);
+    }
+    for (let i = 0; i < 13; i++) cells.push({ x: W * (0.1 + rng() * 0.8), y: H * (0.56 + rng() * 0.32), r: 10 + rng() * 7, glow: 0, wob: Array.from({ length: 10 }, () => .8 + rng() * .4), spreadAt: 0 });
+    neurons.forEach(n => [...cells].sort((a, b) => Math.hypot(a.x - n.x, a.y - n.y) - Math.hypot(b.x - n.x, b.y - n.y)).slice(0, 2).forEach(g => axons.push({ n, g, c: [n.x, n.y + n.r, n.x + (rng() - .5) * 60, (n.y + g.y) / 2, g.x, g.y - g.r] })));
+    cells.forEach((g, i) => cells.map((h, j) => [j, Math.hypot(h.x - g.x, h.y - g.y)]).filter(([j]) => j !== i).sort((a, b) => a[1] - b[1]).slice(0, 2).forEach(([j]) => { if (j > i) tubes.push([g, cells[j]]); }));
+  }
+  const q = (c, t) => { const u = 1 - t; return [u * u * c[0] + 2 * u * t * c[2] + t * t * c[4], u * u * c[1] + 2 * u * t * c[3] + t * t * c[5]]; };
+  function draw() {
+    cx.clearRect(0, 0, W, H); cx.lineCap = "round"; cx.lineJoin = "round";
+    cx.fillStyle = C.ink2; cx.font = "600 11px Archivo, Helvetica, sans-serif"; cx.textAlign = "left";
+    cx.fillText("Neurons", 14, 22); cx.fillText("Glioma cell network", 14, H * 0.5 + 4);
+    cx.strokeStyle = C.rule; cx.lineWidth = 1; cx.setLineDash([3, 4]); cx.beginPath(); cx.moveTo(14, H * 0.47); cx.lineTo(W - 14, H * 0.47); cx.stroke(); cx.setLineDash([]);
+    tubes.forEach(([a, b]) => { const g = Math.max(a.glow, b.glow); cx.strokeStyle = g > .05 ? C.tumour : C.ink3; cx.globalAlpha = .45 + .55 * g; cx.lineWidth = 1 + g; cx.beginPath(); cx.moveTo(a.x, a.y); cx.lineTo(b.x, b.y); cx.stroke(); });
+    cx.globalAlpha = 1;
+    axons.forEach(a => { cx.strokeStyle = C.ink3; cx.lineWidth = 1; cx.beginPath(); cx.moveTo(a.c[0], a.c[1]); cx.quadraticCurveTo(a.c[2], a.c[3], a.c[4], a.c[5]); cx.stroke(); });
+    neurons.forEach(n => {
+      cx.strokeStyle = C.neuron; cx.lineWidth = 1.2;
+      n.branches.forEach(([a, L, b]) => { const x2 = n.x + Math.cos(a) * L, y2 = n.y + Math.sin(a) * L; cx.beginPath(); cx.moveTo(n.x, n.y); cx.lineTo(x2, y2); cx.lineTo(x2 + Math.cos(a + b) * L * .5, y2 + Math.sin(a + b) * L * .5); cx.stroke(); });
+      cx.fillStyle = C.sheet; cx.beginPath(); cx.arc(n.x, n.y, n.r + 1.5, 0, 7); cx.fill(); cx.strokeStyle = C.neuron; cx.lineWidth = 1.6; cx.stroke();
+      cx.fillStyle = C.neuron; cx.beginPath(); cx.arc(n.x, n.y, 2, 0, 7); cx.fill();
+    });
+    cells.forEach(g => {
+      cx.beginPath(); g.wob.forEach((w, k) => { const a = k / g.wob.length * Math.PI * 2, r = g.r * w, x = g.x + Math.cos(a) * r, y = g.y + Math.sin(a) * r; k ? cx.lineTo(x, y) : cx.moveTo(x, y); }); cx.closePath();
+      cx.fillStyle = C.sheet; cx.fill(); if (g.glow > .02) { cx.globalAlpha = .15 + .75 * g.glow; cx.fillStyle = C.tumour; cx.fill(); cx.globalAlpha = 1; }
+      cx.strokeStyle = C.tumour; cx.lineWidth = 1.4; cx.stroke();
+      cx.fillStyle = g.glow > .4 ? C.sheet : C.tumour; cx.beginPath(); cx.arc(g.x, g.y, 2.2, 0, 7); cx.fill();
+    });
+    spikes.forEach(s => { const [x, y] = q(s.a.c, s.t); cx.fillStyle = C.signal; cx.beginPath(); cx.arc(x, y, 3, 0, 7); cx.fill(); });
+    cx.strokeStyle = C.ink; cx.lineWidth = 1.5; cx.beginPath(); cx.moveTo(W - 64, H - 18); cx.lineTo(W - 24, H - 18); cx.stroke();
+    cx.fillStyle = C.ink2; cx.textAlign = "right"; cx.fillText("not to scale", W - 24, H - 26);
+  }
+  let last = 0, next = 0, live = false;
+  function tick(t) {
+    const dt = Math.min(50, t - last); last = t;
+    if (t > next) { spikes.push({ a: axons[Math.floor(rng() * axons.length)], t: 0 }); next = t + 380 + rng() * 650; }
+    spikes.forEach(s => s.t += dt / 1500);
+    spikes = spikes.filter(s => { if (s.t >= 1) { s.a.g.glow = 1; s.a.g.spreadAt = t + 300; return false; } return true; });
+    cells.forEach(g => { if (g.spreadAt && t > g.spreadAt) { tubes.forEach(([a, b]) => { const o = a === g ? b : b === g ? a : null; if (o && o.glow < .3) { o.glow = .75; o.spreadAt = t + 320; } }); g.spreadAt = 0; } g.glow = Math.max(0, g.glow - dt / 1700); });
+    draw(); if (live) requestAnimationFrame(tick);
+  }
+  build();
+  if (reduce) cells.slice(0, 5).forEach(g => g.glow = .7);
+  draw();
+  if (!reduce) new IntersectionObserver(([e]) => { const was = live; live = e.isIntersecting; if (live && !was) requestAnimationFrame(t => { last = t; tick(t); }); }).observe(cv);
+  addEventListener("resize", () => { build(); draw(); });
+
+  /* Fig 2: synapse technical drawing */
+  const sv = document.getElementById("syn");
+  const pre = el("g", {}, sv), post = el("g", {}, sv), mol = el("g", {}, sv), call = el("g", {}, sv);
+  el("path", { d: "M170 0 C170 80 120 100 120 160 C120 222 200 232 280 232 C360 232 440 222 440 160 C440 100 390 80 390 0", fill: "none", stroke: C.neuron, "stroke-width": 1.8 }, pre);
+  el("text", { x: 280, y: 26, "text-anchor": "middle", class: "t-ink" }, pre, "Presynaptic terminal (neuron)");
+  [[225, 128], [262, 104], [302, 136], [342, 112], [248, 172], [326, 178], [288, 168]].forEach(([x, y]) => { el("circle", { cx: x, cy: y, r: 15, fill: C.sheet, stroke: C.neuron, "stroke-width": 1.2 }, pre); for (let k = 0; k < 4; k++) el("circle", { cx: x + Math.cos(k * 1.6) * 6, cy: y + Math.sin(k * 1.6) * 6, r: 2, fill: C.signal }, pre); });
+  el("path", { d: "M30 470 C30 360 120 290 280 290 C440 290 530 360 530 470", fill: "none", stroke: C.tumour, "stroke-width": 1.8 }, post);
+  el("text", { x: 280, y: 452, "text-anchor": "middle", class: "t-ink" }, post, "Glioma cell membrane");
+  const R = (x, color, solid) => { const g = el("g", {}, post); el("rect", { x: x - 9, y: 284, width: 18, height: 30, fill: solid ? color : C.sheet, stroke: color, "stroke-width": 1.6 }, g); el("rect", { x: x - 4, y: 276, width: 8, height: 10, fill: C.sheet, stroke: color, "stroke-width": 1.4 }, g); return g; };
+  const ampa = [R(205, C.tumour, true), R(250, C.tumour, true), R(356, C.tumour, true)], nmda = R(303, C.immune, true), trk = R(420, C.signal, false);
+  const nlgn = el("path", { d: "M134 226 l-12 -26 l13 -3 l8 24 z", fill: C.neuron }, mol);
+  const shed = el("path", { d: "M0 0 l-9 -19 l11 -2 l5 17 z", fill: C.neuron, opacity: 0 }, mol);
+  const bdnfG = el("g", { opacity: .2 }, mol); [[408, 246], [418, 238], [428, 246], [413, 255], [424, 256]].forEach(([x, y]) => el("circle", { cx: x, cy: y, r: 3.4, fill: C.signal, stroke: C.ink, "stroke-width": .8 }, bdnfG));
+  const gluG = el("g", {}, mol);
+  const callouts = [
+    { at: [342, 112], c: [478, 56], label: "VGLUT1 · SLC17A7", side: "c" },
+    { at: [205, 300], c: [70, 376], label: "AMPA · GRIA1, GRIA2", side: "r" },
+    { at: [303, 300], c: [300, 404], label: "NMDA · GRIN2B", side: "r" },
+    { at: [128, 210], c: [44, 240], label: "NLGN3", side: "r" },
+    { at: [420, 286], c: [486, 352], label: "TrkB · NTRK2 + BDNF", side: "c" },
+  ];
+  const cEls = callouts.map((c, i) => {
+    const g = el("g", {}, call);
+    el("line", { x1: c.at[0], y1: c.at[1], x2: c.c[0], y2: c.c[1], stroke: C.ink, "stroke-width": .9 }, g);
+    el("circle", { cx: c.c[0], cy: c.c[1], r: 10, fill: C.sheet, stroke: C.ink, "stroke-width": 1.4 }, g);
+    el("text", { x: c.c[0], y: c.c[1] + 4.5, "text-anchor": "middle", class: "t-ink" }, g, i + 1);
+    if (c.side === "r") el("text", { x: c.c[0] + 16, y: c.c[1] + 4.5 }, g, c.label);
+    else el("text", { x: c.c[0], y: c.c[1] + 28, "text-anchor": "middle" }, g, c.label);
+    return g;
+  });
+  let cur = 1, glu = [];
+  function setStep(s) {
+    cur = s;
+    cEls.forEach((g, i) => g.setAttribute("opacity", i + 1 === s ? 1 : .25));
+    ampa.forEach(a => a.setAttribute("opacity", [1, 2, 5].includes(s) ? 1 : .35)); nmda.setAttribute("opacity", s <= 1 || s === 3 ? 1 : .35); trk.setAttribute("opacity", s === 5 ? 1 : .35);
+    nlgn.setAttribute("opacity", s === 4 ? 1 : .4); bdnfG.setAttribute("opacity", s === 5 ? 1 : .2);
+    document.querySelectorAll(".step").forEach(e => e.classList.toggle("on", +e.dataset.step === s));
+  }
+  setStep(1);
+  if (!reduce) {
+    const io = new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting) setStep(+e.target.dataset.step); }), { rootMargin: "-45% 0px -45% 0px" });
+    document.querySelectorAll(".step").forEach(s => io.observe(s));
+    let on = false, lt = 0, emit = 0, sh = 0;
+    const a = (t) => {
+      const dt = Math.min(50, t - lt || 16); lt = t;
+      if (t > emit && cur <= 3) { for (let k = 0; k < 3; k++) glu.push({ x: 225 + rng() * 120, y: 236, vy: .045 + rng() * .035, vx: (rng() - .5) * .04, e: el("circle", { r: 2.2, fill: C.signal }, gluG) }); emit = t + 480; }
+      glu.forEach(p => { p.x += p.vx * dt; p.y += p.vy * dt; p.e.setAttribute("cx", p.x); p.e.setAttribute("cy", p.y); });
+      glu = glu.filter(p => p.y < 278 || (p.e.remove(), false));
+      if (cur === 4) { sh = (sh + dt / 2600) % 1; shed.setAttribute("opacity", 1 - sh * .4); shed.setAttribute("transform", `translate(${140 + sh * 80} ${214 + sh * 64}) rotate(${sh * 120})`); } else shed.setAttribute("opacity", 0);
+      if (on) requestAnimationFrame(a);
+    };
+    new IntersectionObserver(([e]) => { const was = on; on = e.isIntersecting; if (on && !was) requestAnimationFrame(a); }).observe(sv);
+  }
+
+  /* Fig 3: flow line */
+  const fl = document.getElementById("flow");
+  const AG = [["Hypothesis", "tests and nulls"], ["Literature", "Europe PMC"], ["Data", "TCGA · CGGA · GEO · Visium"], ["Bioinformatics", "scores · cells · tissue"], ["Statistics", "Cox · confounding"], ["Validation", "independent cohorts"], ["Reviewer", "grades every claim"]];
+  const fx = i => 80 + i * (1040 / 6);
+  el("text", { x: 0, y: 64.5 }, fl, "question");
+  el("text", { x: 1200, y: 64.5, "text-anchor": "end" }, fl, "report");
+  el("line", { x1: 62, x2: fx(6) + 60, y1: 60, y2: 60, stroke: C.ink, "stroke-width": 1.5 }, fl);
+  const nodes = AG.map(([n, d], i) => {
+    el("circle", { cx: fx(i), cy: 60, r: 13, fill: C.sheet, stroke: C.ink, "stroke-width": 1.5 }, fl);
+    const num = el("text", { x: fx(i), y: 64.5, "text-anchor": "middle", class: "t-ink" }, fl, i + 1);
+    el("text", { x: fx(i), y: 104, "text-anchor": "middle", class: "node-t" }, fl, n);
+    el("text", { x: fx(i), y: 124, "text-anchor": "middle" }, fl, d);
+    return [num.previousSibling, num];
+  });
+  const pulse = el("circle", { cx: 62, cy: 60, r: 5, fill: C.tumour }, fl);
+  if (!reduce) {
+    let fon = false, t0 = 0;
+    const f = (t) => { if (!t0) t0 = t; const u = ((t - t0) / 6000) % 1, x = 62 + u * (fx(6) + 60 - 62); pulse.setAttribute("cx", x); nodes.forEach(([c, n], i) => { const hit = Math.abs(fx(i) - x) < 24; c.setAttribute("fill", hit ? C.ink : C.sheet); n.style.fill = hit ? C.sheet : ""; }); if (fon) requestAnimationFrame(f); };
+    new IntersectionObserver(([e]) => { const was = fon; fon = e.isIntersecting; if (fon && !was) requestAnimationFrame(f); }).observe(fl);
+  } else pulse.setAttribute("cx", fx(6) + 60);
+
+  /* Fig 4a */
+  const SUB = [["TCGA", "discovery", 76, [-1.058, -1.551, -0.566], [-0.521, -0.992, -0.051]], ["CGGA-325", "validation", 50, [-1.188, -1.897, -0.480], [-0.378, -1.052, 0.295]], ["CGGA-693", "validation", 75, [-1.174, -1.672, -0.675], [0.068, -0.394, 0.530]]];
+  const s4 = document.getElementById("subChart"), X0 = 250, X1 = 840, xs = v => X0 + (v + 2) / 2.75 * (X1 - X0);
+  [-2, -1.5, -1, -.5, 0, .5].forEach(v => { el("line", { x1: xs(v), x2: xs(v), y1: 8, y2: 190, class: v === 0 ? "zero" : "rule" }, s4); el("text", { x: xs(v), y: 210, "text-anchor": "middle", class: "num" }, s4, v === 0 ? "0" : minus(v.toFixed(1))); });
+  el("text", { x: xs(-1), y: 234, "text-anchor": "middle" }, s4, "← lower in Mesenchymal");
+  el("text", { x: xs(0.32), y: 234, "text-anchor": "middle" }, s4, "higher →");
+  el("text", { x: 238, y: 14, "text-anchor": "end" }, s4, "g");
+  const rows = SUB.map((d, i) => { const y = 40 + i * 60; el("text", { x: 0, y: y + 2, class: "t-ink" }, s4, d[0]); el("text", { x: 0, y: y + 20 }, s4, `${d[1]} · n = ${d[2]}`); return { d, l: el("line", { y1: y, y2: y, class: "ci", "stroke-width": 2 }, s4), p: el("rect", { y: y - 6, width: 12, height: 12, class: "pt" }, s4), v: el("text", { x: 238, y: y + 4, "text-anchor": "end", class: "num t-ink" }, s4) }; });
+  function setSub(adj) {
+    rows.forEach(({ d, l, p, v }) => { const e = adj ? d[4] : d[3]; l.setAttribute("x1", xs(e[1])); l.setAttribute("x2", xs(e[2])); p.setAttribute("x", xs(e[0]) - 6); const col = e[2] < 0 ? C.tumour : C.ink3; l.style.stroke = col; p.style.fill = col; v.textContent = minus(e[0].toFixed(2)); });
+    const vd = document.getElementById("subVerdict");
+    vd.textContent = adj ? "Not replicated after adjustment" : "Replicated in 2 of 2 independent cohorts"; vd.className = "verdict" + (adj ? " no" : "");
+    document.getElementById("segRaw").setAttribute("aria-pressed", String(!adj)); document.getElementById("segAdj").setAttribute("aria-pressed", String(adj));
+  }
+  setSub(false);
+  document.getElementById("segRaw").onclick = () => setSub(false);
+  document.getElementById("segAdj").onclick = () => setSub(true);
+
+  /* Fig 4b, 4c */
+  const cp = document.getElementById("compChart"), bx = v => 96 + v * 280;
+  [0, .25, .5, .75, 1].forEach(v => { el("line", { x1: bx(v), x2: bx(v), y1: 6, y2: 140, class: v === 0 ? "zero" : "rule" }, cp); el("text", { x: bx(v), y: 158, "text-anchor": "middle", class: "num" }, cp, v); });
+  [["TCGA", .713], ["CGGA-325", .674], ["CGGA-693", .814]].forEach(([k, v], i) => { const y = 20 + i * 40; el("text", { x: 0, y: y + 14, class: "t-ink" }, cp, k); el("rect", { x: bx(0), y, width: bx(v) - bx(0), height: 20, fill: C.neuron }, cp); el("text", { x: bx(v) + 8, y: y + 15, class: "num t-ink" }, cp, v.toFixed(2)); });
+  el("text", { x: bx(.5), y: 180, "text-anchor": "middle" }, cp, "Spearman ρ");
+  const su = document.getElementById("survChart"), lx = v => 96 + (Math.log(v) - Math.log(.5)) / Math.log(4) * 280;
+  [.5, .75, 1, 1.5, 2].forEach(v => { el("line", { x1: lx(v), x2: lx(v), y1: 6, y2: 140, class: v === 1 ? "zero" : "rule" }, su); el("text", { x: lx(v), y: 158, "text-anchor": "middle", class: "num" }, su, v); });
+  [["TCGA", 1.159, .952, 1.41], ["CGGA-325", .75, .582, .968], ["CGGA-693", .946, .774, 1.157]].forEach(([k, e, lo, hi], i) => { const y = 30 + i * 40; el("text", { x: 0, y: y + 4, class: "t-ink" }, su, k); const col = hi < 1 ? C.tumour : C.ink; el("line", { x1: lx(lo), x2: lx(hi), y1: y, y2: y, stroke: col, "stroke-width": 2 }, su); el("rect", { x: lx(e) - 5, y: y - 5, width: 10, height: 10, fill: col }, su); });
+  el("text", { x: lx(1), y: 180, "text-anchor": "middle" }, su, "hazard ratio per SD");
+
+  /* Fig 6 lollipop */
+  const sc = document.getElementById("scChart"), px = v => 230 + v / 40 * 600;
+  [0, 10, 20, 30, 40].forEach(v => { el("line", { x1: px(v), x2: px(v), y1: 4, y2: 212, class: v ? "rule" : "zero" }, sc); el("text", { x: px(v), y: 232, "text-anchor": "middle", class: "num" }, sc, v + "%"); });
+  [["NLGN3", 37, "secreted / postsynaptic"], ["GRIA2", 29, "postsynaptic"], ["GRIA1", 17, "postsynaptic"], ["BDNF", 3, "secreted"], ["GRIN2B", 1, "postsynaptic"], ["SLC17A7", 0, "presynaptic"]].forEach(([g, v, r], i) => {
+    const y = 18 + i * 34, col = r === "presynaptic" ? C.signal : v >= 10 ? C.tumour : C.ink3;
+    el("text", { x: 0, y: y + 4, class: "t-ink" }, sc, g); el("text", { x: 72, y: y + 4 }, sc, r);
+    el("line", { x1: px(0), x2: px(v), y1: y, y2: y, stroke: col, "stroke-width": 2 }, sc); el("circle", { cx: px(v), cy: y, r: 6, fill: col }, sc);
+    el("text", { x: px(v) + 14, y: y + 4, class: "num t-ink" }, sc, v + "%");
+  });
+
+  /* Fig 7 evidence scale */
+  const ld = document.getElementById("ladder");
+  const LV = [["Causal", "needs perturbation or randomisation", "out"], ["Mechanistic", "from the cited experiments only", "lit"], ["Association", "subtype difference, replicated in 2 of 2 cohorts", "reached"], ["Plausibility", "receptor genes spread through tumour tissue", "lit"]];
+  el("line", { x1: 40, x2: 40, y1: 26, y2: 282, stroke: C.ink, "stroke-width": 1.5 }, ld);
+  el("path", { d: "M34 32 L40 20 L46 32", fill: "none", stroke: C.ink, "stroke-width": 1.5 }, ld);
+  el("text", { x: 52, y: 22 }, ld, "stronger");
+  LV.forEach(([n, d, s], i) => {
+    const y = 60 + i * 64;
+    el("line", { x1: 32, x2: 48, y1: y, y2: y, stroke: C.ink, "stroke-width": 1.5 }, ld);
+    el("rect", { x: 64, y: y - 16, width: 32, height: 32, fill: s === "reached" ? C.neuron : C.sheet, stroke: s === "out" ? C.ink3 : s === "reached" ? C.neuron : C.ink, "stroke-width": 1.5, "stroke-dasharray": s === "out" ? "4 4" : "" }, ld);
+    el("text", { x: 112, y: y - 2, class: "t-ink" }, ld, n);
+    el("text", { x: 112, y: y + 16 }, ld, d);
+  });
+
+  /* Fig 5 hexagonal spot map (real Visium data) */
+  const D = window.NB_SPATIAL;
+  const raw = Uint8Array.from(atob(D.b64), c => c.charCodeAt(0)), N = D.n;
+  const ROW = raw.subarray(0, N), COL = raw.subarray(N, 2 * N), DOM = raw.subarray(2 * N, 3 * N), LAY = {};
+  D.layers.forEach((k, i) => LAY[k] = raw.subarray((3 + i) * N, (4 + i) * N));
+  const mc = document.getElementById("spotmap"), mx = mc.getContext("2d");
+  const DC = [C.neuron, C.tumour, C.immune, C.signal], DN = ["Neuron-rich", "Tumour / reactive glia", "Myeloid", "Vascular"];
+  const HUE = { neuron: C.neuron, SLC17A7: C.signal, GRIA2: C.tumour, GAP43: C.neuron };
+  const NOTE = {
+    domains: `<h3>Tissue domains</h3><p class="muted">Spots clustered by expression and named by their strongest programme. Neuron-rich tissue occupies one corner: ${D.domainCounts[0]} of ${N.toLocaleString("en")} spots.</p>`,
+    neuron: `<h3>Neuron programme</h3><p class="muted">Eight mature-neuron markers per spot. This is the normal cortex that ends up in bulk tumour samples.</p>`,
+    SLC17A7: `<h3>SLC17A7, presynaptic</h3><p class="muted">Follows the neuron-rich region (ρ = 0.27 with the neuron programme), as a presynaptic gene should.</p>`,
+    GRIA2: `<h3>GRIA2, postsynaptic</h3><p class="muted">Detected in 53% of spots, across tumour regions, and unrelated to neuronal content (ρ = −0.03).</p>`,
+    GAP43: `<h3>GAP43, tumour microtubes</h3><p class="muted">Higher beside neuron-rich tissue even after adjusting for each spot's own neuron score (Hedges' g = 0.76).</p>`,
+  };
+  const rgb = h => { const n = parseInt(h.replace("#", ""), 16); return [n >> 16 & 255, n >> 8 & 255, n & 255]; };
+  function colours(l) {
+    if (l === "domains") return Array.from(DOM, d => rgb(DC[d]));
+    const hi = rgb(HUE[l]), lo = rgb("#e4e4de");
+    return Array.from(LAY[l], x => { const t = Math.pow(x / 255, .8); return lo.map((c, k) => Math.round(c + (hi[k] - c) * t)); });
+  }
+  let layer = "domains", now = null;
+  const geom = () => { const w = mc.clientWidth, s = w / (D.colMax + 3), dy = s * Math.sqrt(3); return { w, s, dy, h: (D.rowMax + 2) * dy }; };
+  function size() { const g = geom(); mc.style.height = g.h + "px"; mc.width = g.w * dpr; mc.height = g.h * dpr; mx.setTransform(dpr, 0, 0, dpr, 0, 0); }
+  function paint(cols) {
+    const { w, s, dy, h } = geom(), r = s * 1.13;
+    mx.clearRect(0, 0, w, h);
+    for (let i = 0; i < N; i++) {
+      const x = (COL[i] + 1.5) * s, y = (ROW[i] + 1) * dy, c = cols[i];
+      mx.fillStyle = `rgb(${c[0]},${c[1]},${c[2]})`; mx.beginPath();
+      for (let k = 0; k < 6; k++) { const a = Math.PI / 6 + k * Math.PI / 3, px2 = x + r * Math.cos(a), py2 = y + r * Math.sin(a); k ? mx.lineTo(px2, py2) : mx.moveTo(px2, py2); }
+      mx.fill();
+    }
+  }
+  function key() {
+    const k = document.getElementById("mapKey");
+    k.innerHTML = layer === "domains" ? DN.map((n, i) => `<span><i style="background:${DC[i]}"></i>${n} · ${D.domainCounts[i].toLocaleString("en")}</span>`).join("")
+      : `<span style="flex:1 1 100%"><div class="ramp" style="background:linear-gradient(90deg,#e4e4de,${HUE[layer]})"></div></span><span>low</span><span style="margin-left:auto">high (99th percentile)</span>`;
+    document.getElementById("layerNote").innerHTML = NOTE[layer];
+  }
+  function setLayer(l, anim) {
+    const to = colours(l); layer = l; key();
+    document.querySelectorAll("[data-layer]").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.layer === l)));
+    if (!anim || reduce || !now) { now = to; paint(now); return; }
+    const from = now, t0 = performance.now();
+    requestAnimationFrame(function f(t) {
+      const k = Math.min(1, (t - t0) / 800);
+      paint(from.map((c, i) => { const u = Math.min(1, Math.max(0, (k - ROW[i] / D.rowMax * .4) / .6)); return c.map((v, j) => Math.round(v + (to[i][j] - v) * u)); }));
+      if (k < 1) requestAnimationFrame(f); else now = to;
+    });
+  }
+  size(); setLayer("domains", false);
+  document.querySelectorAll("[data-layer]").forEach(b => b.addEventListener("click", () => setLayer(b.dataset.layer, true)));
+  addEventListener("resize", () => { size(); paint(now); });
+})();
+</script>

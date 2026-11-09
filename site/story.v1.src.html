@@ -1,0 +1,578 @@
+<title>NeuroBridge</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:ital,opsz,wght@0,6..96,500;0,6..96,700;1,6..96,500&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: one reading column (~68ch) with full-bleed scenes; dark = fluorescence microscopy, light = H&E-stained slide.
+   Semantic hues: neuron (GCaMP green), tumour (mCherry magenta), signal (glutamate amber), immune (DAPI blue). */
+:root {
+  --bg: #0b0d1a; --surface: #12152b; --line: #262a4a; --fg: #ebe8f6; --muted: #a8a5c6; --faint: #8784a8;
+  --neuron: #4fe0b0; --tumour: #ff5fa2; --signal: #ffc857; --immune: #6ea8ff;
+  --font-display: "Bodoni Moda", "Didot", "Bodoni 72", Georgia, serif;
+  --font-body: "IBM Plex Sans", -apple-system, "Segoe UI", Helvetica, Arial, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  --step--1: 0.84rem; --step-0: 1.02rem; --step-1: 1.25rem; --step-2: 1.7rem; --step-3: 2.6rem; --step-4: clamp(2.5rem, 6.4vw, 4.6rem);
+  color-scheme: dark;
+}
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme="dark"]) {
+    --bg: #f8eef3; --surface: #fff8fb; --line: #e6d2de; --fg: #2a1838; --muted: #644f6e; --faint: #7d6886;
+    --neuron: #0d8a64; --tumour: #c2185b; --signal: #a8690a; --immune: #2f5fbf; color-scheme: light;
+  }
+}
+:root[data-theme="light"] {
+  --bg: #f8eef3; --surface: #fff8fb; --line: #e6d2de; --fg: #2a1838; --muted: #644f6e; --faint: #7d6886;
+  --neuron: #0d8a64; --tumour: #c2185b; --signal: #a8690a; --immune: #2f5fbf; color-scheme: light;
+}
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--fg); font-family: var(--font-body); font-size: var(--step-0); line-height: 1.6; -webkit-font-smoothing: antialiased; }
+a { color: var(--neuron); text-underline-offset: 3px; }
+a:focus-visible, button:focus-visible { outline: 2px solid var(--signal); outline-offset: 3px; border-radius: 4px; }
+.wrap { max-width: 1120px; margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+.col { max-width: 68ch; }
+section { padding-block: clamp(56px, 9vw, 120px); border-top: 1px solid var(--line); }
+.eyebrow { font-family: var(--font-mono); font-size: var(--step--1); letter-spacing: .14em; text-transform: uppercase; color: var(--muted); margin: 0 0 14px; }
+h1, h2 { font-family: var(--font-display); font-weight: 500; letter-spacing: -0.01em; text-wrap: balance; margin: 0; }
+h1 { font-size: var(--step-4); line-height: 1.04; }
+h2 { font-size: var(--step-3); line-height: 1.1; margin-bottom: 20px; }
+h1 em, h2 em { font-style: italic; color: var(--tumour); }
+h3 { font-size: var(--step-1); font-weight: 600; margin: 0 0 6px; }
+p { margin: 0 0 14px; }
+.lede { font-size: var(--step-1); color: var(--muted); max-width: 60ch; }
+.mono { font-family: var(--font-mono); font-size: var(--step--1); }
+.gene { font-family: var(--font-mono); font-weight: 500; font-size: .92em; padding: 0 .25em; border-radius: 3px; background: color-mix(in srgb, var(--fg) 8%, transparent); }
+.cite { font-family: var(--font-mono); font-size: var(--step--1); color: var(--faint); }
+.cite a { color: var(--muted); }
+.n { font-variant-numeric: tabular-nums; }
+
+/* hero */
+.hero { position: relative; border-top: 0; padding-block: 0; overflow: hidden; }
+.hero canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+.hero .wrap { position: relative; padding-block: clamp(72px, 12vw, 150px) clamp(56px, 8vw, 96px); pointer-events: none; }
+.hero .wrap > * { pointer-events: auto; }
+.hero-veil { position: absolute; inset: 0; background: linear-gradient(90deg, var(--bg) 0%, color-mix(in srgb, var(--bg) 82%, transparent) 42%, transparent 78%); }
+.tagline { font-family: var(--font-display); font-style: italic; font-size: var(--step-1); color: var(--neuron); margin: 22px 0 28px; }
+.legend-inline { display: flex; flex-wrap: wrap; gap: 8px 22px; margin-top: 30px; }
+.legend-inline span { display: inline-flex; align-items: center; gap: 8px; font-family: var(--font-mono); font-size: var(--step--1); color: var(--muted); }
+.dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; flex: none; }
+.figures { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 18px; margin-top: 40px; max-width: 760px; }
+.figures div { border-top: 1px solid var(--line); padding-top: 10px; }
+.figures b { display: block; font-family: var(--font-display); font-size: var(--step-2); font-weight: 500; font-variant-numeric: tabular-nums; }
+.figures small { color: var(--muted); font-size: var(--step--1); }
+
+/* synapse scrolly */
+.scrolly { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); gap: clamp(24px, 5vw, 64px); align-items: start; margin-top: 36px; }
+.sticky { position: sticky; top: calc(env(safe-area-inset-top, 0px) + 24px); }
+.synapse { width: 100%; height: auto; display: block; border: 1px solid var(--line); border-radius: 14px; background: var(--surface); }
+.steps { display: grid; gap: 22vh; padding-block: 6vh 20vh; }
+.step { border-left: 2px solid var(--line); padding: 4px 0 4px 18px; transition: border-color .4s, opacity .4s; opacity: .6; }
+.step.on { border-color: var(--signal); opacity: 1; }
+.step h3 { font-family: var(--font-display); font-weight: 500; font-size: var(--step-2); }
+
+/* pipeline */
+.pipeline { position: relative; display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 10px; margin-top: 36px; }
+.agent { position: relative; padding: 14px 12px 12px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); transition: border-color .3s, transform .3s; }
+.agent .num { font-family: var(--font-mono); font-size: .72rem; color: var(--faint); }
+.agent b { display: block; font-size: .95rem; margin: 4px 0; }
+.agent p { font-size: .8rem; color: var(--muted); margin: 0; line-height: 1.4; }
+.agent.lit { border-color: var(--neuron); transform: translateY(-3px); }
+.agent.lit .num { color: var(--neuron); }
+.pipe-stats { display: flex; flex-wrap: wrap; gap: 10px 28px; margin-top: 22px; }
+
+/* charts */
+.panel { border: 1px solid var(--line); border-radius: 14px; background: var(--surface); padding: clamp(16px, 3vw, 28px); margin-top: 28px; }
+.panel-head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 12px; margin-bottom: 8px; }
+.verdict { font-family: var(--font-mono); font-size: var(--step--1); padding: 3px 10px; border-radius: 999px; border: 1px solid currentColor; }
+.verdict.yes { color: var(--neuron); } .verdict.no { color: var(--tumour); }
+.chart { width: 100%; height: auto; display: block; overflow: visible; }
+.chart text { fill: var(--muted); font-family: var(--font-mono); font-size: 12px; }
+.chart .lab { fill: var(--fg); font-family: var(--font-body); font-size: 13px; }
+.chart .axis { stroke: var(--line); }
+.chart .ref { stroke: var(--faint); stroke-dasharray: 3 4; }
+.chart .ci { stroke-width: 2.5; stroke-linecap: round; transition: all 1.1s cubic-bezier(.6,.05,.25,1); }
+.chart .pt { transition: all 1.1s cubic-bezier(.6,.05,.25,1); stroke: var(--surface); stroke-width: 2; }
+.toggle { font: inherit; font-size: var(--step--1); font-family: var(--font-mono); color: var(--fg); background: transparent; border: 1px solid var(--line); border-radius: 999px; padding: 7px 14px; cursor: pointer; }
+.toggle[aria-pressed="true"] { border-color: var(--tumour); color: var(--tumour); }
+.note { font-size: var(--step--1); color: var(--muted); margin-top: 10px; }
+.two { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 20px; }
+.two .panel { margin-top: 20px; }
+
+/* tissue */
+.tissue { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr); gap: clamp(20px, 4vw, 48px); align-items: start; margin-top: 30px; }
+.map-box { position: relative; border: 1px solid var(--line); border-radius: 14px; background: var(--surface); padding: 12px; }
+#spotmap { width: 100%; height: auto; display: block; aspect-ratio: 116 / 78; max-width: 100%; }
+.layers { display: flex; flex-wrap: wrap; gap: 8px; margin: 14px 0 16px; }
+.map-legend { display: flex; flex-wrap: wrap; gap: 6px 16px; margin-top: 10px; font-family: var(--font-mono); font-size: .76rem; color: var(--muted); }
+.ramp { height: 8px; border-radius: 4px; margin-top: 10px; }
+.layer-note { min-height: 6.5em; }
+
+/* ladder */
+.ladder { display: grid; gap: 10px; margin-top: 30px; max-width: 760px; }
+.rung { display: grid; grid-template-columns: 170px minmax(0, 1fr); gap: 16px; align-items: center; padding: 14px 16px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); }
+.rung b { font-family: var(--font-mono); font-size: .8rem; letter-spacing: .08em; text-transform: uppercase; }
+.rung.reached { border-color: var(--neuron); }
+.rung.reached b { color: var(--neuron); }
+.rung.lit b { color: var(--signal); }
+.rung.out { opacity: .55; }
+.rung p { margin: 0; color: var(--muted); font-size: .92rem; }
+
+footer { border-top: 1px solid var(--line); padding-block: 48px 64px; color: var(--muted); font-size: var(--step--1); }
+footer .row { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 16px; }
+
+@media (max-width: 860px) {
+  .scrolly, .tissue, .two { grid-template-columns: minmax(0, 1fr); }
+  .sticky { position: relative; top: 0; }
+  .steps { gap: 28px; padding-block: 8px; }
+  .step { opacity: 1; }
+  .pipeline { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .figures { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .rung { grid-template-columns: minmax(0, 1fr); gap: 4px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { transition-duration: 0s !important; animation-duration: 0s !important; }
+}
+</style>
+
+<section class="hero" aria-label="Introduction">
+  <canvas id="net" aria-hidden="true"></canvas>
+  <div class="hero-veil" aria-hidden="true"></div>
+  <div class="wrap">
+    <p class="eyebrow">NeuroBridge · cancer neuroscience · glioblastoma</p>
+    <h1>Neurons wire into glioblastoma.<br><em>Does it show in patients?</em></h1>
+    <p class="tagline">From biological hypotheses to clinically relevant evidence.</p>
+    <p class="lede">NeuroBridge is an agentic research platform. Seven specialised agents turn that question into hypotheses, run real statistics on public patient cohorts, single cells and tissue, and grade every conclusion by the strength of its evidence.</p>
+    <div class="legend-inline" aria-hidden="true">
+      <span><i class="dot" style="background:var(--neuron)"></i>neurons</span>
+      <span><i class="dot" style="background:var(--signal)"></i>action potentials</span>
+      <span><i class="dot" style="background:var(--tumour)"></i>glioma cells and calcium waves</span>
+    </div>
+    <div class="figures">
+      <div><b class="n">560</b><small>tumours across 3 bulk cohorts</small></div>
+      <div><b class="n">3,589</b><small>single cells from 4 patients</small></div>
+      <div><b class="n">3,462</b><small>tissue spots, 1 section</small></div>
+      <div><b class="n">0</b><small>numbers written by a language model</small></div>
+    </div>
+  </div>
+</section>
+
+<section id="biology" aria-labelledby="bio-h">
+  <div class="wrap">
+    <p class="eyebrow">The biology</p>
+    <h2 id="bio-h">A synapse that should not exist</h2>
+    <p class="lede col">Over the last decade, experiments in mice and patient-derived tumours showed that neurons form working synapses onto glioma cells, and that this input makes tumours grow. Five genes carry the story. NeuroBridge treats them as hypotheses to test, not as biomarkers.</p>
+    <div class="scrolly">
+      <div class="sticky">
+        <svg class="synapse" id="syn" viewBox="0 0 560 420" role="img" aria-labelledby="syn-t">
+          <title id="syn-t">Schematic of a neuron-to-glioma synapse: a presynaptic terminal releases glutamate onto AMPA and NMDA receptors on a glioma cell; neuroligin-3 is shed, and BDNF binds TrkB.</title>
+          <defs>
+            <radialGradient id="gT" cx="50%" cy="20%" r="75%"><stop offset="0" stop-color="var(--neuron)" stop-opacity=".30"/><stop offset="1" stop-color="var(--neuron)" stop-opacity=".06"/></radialGradient>
+            <radialGradient id="gG" cx="50%" cy="85%" r="80%"><stop offset="0" stop-color="var(--tumour)" stop-opacity=".30"/><stop offset="1" stop-color="var(--tumour)" stop-opacity=".05"/></radialGradient>
+          </defs>
+          <path d="M150 -10 C150 70 110 90 110 150 C110 205 190 215 280 215 C370 215 450 205 450 150 C450 90 410 70 410 -10 Z" fill="url(#gT)" stroke="var(--neuron)" stroke-width="2"/>
+          <text x="280" y="34" text-anchor="middle" fill="var(--neuron)" font-family="IBM Plex Mono, monospace" font-size="13">NEURON · presynaptic terminal</text>
+          <path d="M40 430 C40 330 120 268 280 268 C440 268 520 330 520 430 Z" fill="url(#gG)" stroke="var(--tumour)" stroke-width="2"/>
+          <text x="280" y="402" text-anchor="middle" fill="var(--tumour)" font-family="IBM Plex Mono, monospace" font-size="13">GLIOMA CELL · postsynaptic</text>
+          <g id="vesicles"></g>
+          <g id="glu"></g>
+          <g id="receptors"></g>
+          <g id="nlgn"></g>
+          <g id="bdnf"></g>
+          <g id="labels" font-family="IBM Plex Mono, monospace" font-size="13"></g>
+        </svg>
+      </div>
+      <div class="steps" id="steps">
+        <div class="step on" data-step="0">
+          <h3>Glutamate is released</h3>
+          <p>The presynaptic terminal packs glutamate into vesicles with the transporter <span class="gene">SLC17A7</span> (VGLUT1). When the neuron fires, vesicles fuse and glutamate crosses the cleft.</p>
+          <p class="cite">Venkataramani et al., Nature 2019 · <a href="https://pubmed.ncbi.nlm.nih.gov/31534219/">PMID 31534219</a></p>
+        </div>
+        <div class="step" data-step="1">
+          <h3>AMPA receptors on the tumour cell</h3>
+          <p>Glioma cells express AMPA receptors (<span class="gene">GRIA1</span>, <span class="gene">GRIA2</span>). Glutamate opens them and depolarises the tumour cell, which drives invasion and growth.</p>
+          <p class="cite">Venkatesh et al., Nature 2019 · <a href="https://pubmed.ncbi.nlm.nih.gov/31534222/">PMID 31534222</a></p>
+        </div>
+        <div class="step" data-step="2">
+          <h3>NMDA signalling</h3>
+          <p><span class="gene">GRIN2B</span>, an NMDA receptor subunit, adds a calcium-permeable route. NMDA signalling at neuron–tumour contacts promotes growth of brain tumours.</p>
+          <p class="cite">Zeng et al., Nature 2019 · <a href="https://pubmed.ncbi.nlm.nih.gov/31534217/">PMID 31534217</a></p>
+        </div>
+        <div class="step" data-step="3">
+          <h3>Neuroligin-3 is shed</h3>
+          <p>Activity cleaves <span class="gene">NLGN3</span> from neurons and glia. The soluble fragment acts as a mitogen on glioma cells; without it, xenografts barely grow.</p>
+          <p class="cite">Venkatesh et al., Cell 2015 · <a href="https://pubmed.ncbi.nlm.nih.gov/25913192/">PMID 25913192</a></p>
+        </div>
+        <div class="step" data-step="4">
+          <h3>BDNF strengthens the synapse</h3>
+          <p><span class="gene">BDNF</span> binding its receptor TrkB (<span class="gene">NTRK2</span>) recruits more AMPA receptors, the same plasticity that underlies learning.</p>
+          <p class="cite">Taylor et al., Nature 2023 · <a href="https://pubmed.ncbi.nlm.nih.gov/37914930/">PMID 37914930</a></p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="platform" aria-labelledby="plat-h">
+  <div class="wrap">
+    <p class="eyebrow">The platform</p>
+    <h2 id="plat-h">Seven agents, one audit trail</h2>
+    <p class="lede col">Each agent calls typed tools from a registry. Every call is logged with its inputs, outputs and limitations. Claims are written from computed results with fixed templates, then audited by a reviewer that knows the difference between an association and a cause.</p>
+    <div class="pipeline" id="pipeline">
+      <div class="agent"><span class="num">01</span><b>Hypothesis</b><p>Splits the question into tests with explicit nulls.</p></div>
+      <div class="agent"><span class="num">02</span><b>Literature</b><p>Pulls verified records from Europe PMC by PMID.</p></div>
+      <div class="agent"><span class="num">03</span><b>Data</b><p>Loads TCGA, CGGA, GEO and Visium; hashes every file.</p></div>
+      <div class="agent"><span class="num">04</span><b>Bioinformatics</b><p>Scores, subtypes, differential expression, cell types, tissue.</p></div>
+      <div class="agent"><span class="num">05</span><b>Statistics</b><p>Cox models, assumption checks, confounding.</p></div>
+      <div class="agent"><span class="num">06</span><b>Validation</b><p>Replication in independent cohorts only.</p></div>
+      <div class="agent"><span class="num">07</span><b>Reviewer</b><p>Grades claims, flags causal language and gaps.</p></div>
+    </div>
+    <div class="pipe-stats mono">
+      <span><b class="n">31</b> tool calls</span><span><b class="n">0</b> failed</span><span><b class="n">19</b> graded claims</span><span><b class="n">45</b> verified references</span><span>reference run, 9 Nov 2026</span>
+    </div>
+  </div>
+</section>
+
+<section id="findings" aria-labelledby="find-h">
+  <div class="wrap">
+    <p class="eyebrow">What the patient data say</p>
+    <h2 id="find-h">A real axis, <em>mostly made of brain</em></h2>
+    <p class="lede col">The six-gene score separates two glioblastoma subtypes in every cohort. Then NeuroBridge asks the uncomfortable question: how much of that signal is simply normal brain tissue cut out with the tumour?</p>
+
+    <div class="panel">
+      <div class="panel-head">
+        <h3>Mesenchymal vs Proneural tumours, IDH-wildtype</h3>
+        <span class="verdict yes" id="subVerdict">replicated in 2 of 2 independent cohorts</span>
+      </div>
+      <svg class="chart" id="subChart" viewBox="0 0 760 230" role="img" aria-label="Forest plot of Hedges g for the candidate score, Mesenchymal minus Proneural, in three cohorts"></svg>
+      <div style="display:flex;flex-wrap:wrap;gap:12px;align-items:center;margin-top:8px">
+        <button class="toggle" id="residBtn" aria-pressed="false">Control for normal-brain content</button>
+        <span class="note" id="subNote" style="margin:0">Hedges' g with 95% CI. Below zero means a lower score in Mesenchymal tumours. CGGA subtypes come from a classifier trained on TCGA only (balanced accuracy 0.82), with every candidate gene removed from its features.</span>
+      </div>
+    </div>
+
+    <div class="two">
+      <div class="panel">
+        <h3>The confounder</h3>
+        <p class="note" style="margin-top:0">Spearman correlation between the candidate score and eight mature-neuron marker genes, per cohort.</p>
+        <svg class="chart" id="compChart" viewBox="0 0 360 170" role="img" aria-label="Bar chart of correlations: TCGA 0.71, CGGA-325 0.67, CGGA-693 0.81"></svg>
+      </div>
+      <div class="panel">
+        <div class="panel-head"><h3>Survival</h3><span class="verdict no">not replicated</span></div>
+        <p class="note" style="margin-top:0">Adjusted Cox hazard ratio per SD of the score (log scale).</p>
+        <svg class="chart" id="survChart" viewBox="0 0 360 170" role="img" aria-label="Forest plot of hazard ratios: TCGA 1.16, CGGA-325 0.75, CGGA-693 0.95"></svg>
+      </div>
+    </div>
+    <p class="note col">One cohort shows a significant association, in the opposite direction to discovery. The reviewer agent reports that as heterogeneity, never as support.</p>
+  </div>
+</section>
+
+<section id="tissue" aria-labelledby="tis-h">
+  <div class="wrap">
+    <p class="eyebrow">In intact tissue · one Visium section</p>
+    <h2 id="tis-h">Where the receptors <em>actually</em> sit</h2>
+    <p class="lede col">Bulk tissue blends tumour and brain. A spatial section keeps them apart. Each dot below is one 55 µm spot from a real glioblastoma section, drawn from the data, not an illustration.</p>
+    <div class="tissue">
+      <div class="map-box">
+        <canvas id="spotmap" aria-label="Spatial map of 3,462 tissue spots coloured by the selected layer" role="img"></canvas>
+        <div id="mapLegend" class="map-legend"></div>
+      </div>
+      <div>
+        <div class="layers" role="group" aria-label="Map layer">
+          <button class="toggle" data-layer="domains" aria-pressed="true">Tissue domains</button>
+          <button class="toggle" data-layer="neuron" aria-pressed="false">Neuron programme</button>
+          <button class="toggle" data-layer="SLC17A7" aria-pressed="false">SLC17A7</button>
+          <button class="toggle" data-layer="GRIA2" aria-pressed="false">GRIA2</button>
+          <button class="toggle" data-layer="GAP43" aria-pressed="false">GAP43</button>
+        </div>
+        <div class="layer-note" id="layerNote"></div>
+        <p class="cite">10x Genomics Human Glioblastoma, Visium, Space Ranger 1.2.0, CC BY 4.0. One patient: these are observations about one tumour, labelled exploratory.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="cells" aria-labelledby="cell-h">
+  <div class="wrap">
+    <p class="eyebrow">Single cells · GSE84465 · 4 patients</p>
+    <h2 id="cell-h">Do tumour cells make these transcripts?</h2>
+    <p class="lede col">Share of neoplastic cells in which each gene is detected. The presynaptic transporter is absent from tumour cells, as it should be. The receptor genes are present in a minority of them.</p>
+    <div class="panel"><svg class="chart" id="scChart" viewBox="0 0 760 240" role="img" aria-label="Detection in neoplastic cells: NLGN3 37%, GRIA2 29%, GRIA1 17%, BDNF 3%, GRIN2B 1%, SLC17A7 0%"></svg></div>
+  </div>
+</section>
+
+<section id="evidence" aria-labelledby="ev-h">
+  <div class="wrap">
+    <p class="eyebrow">How far the evidence reaches</p>
+    <h2 id="ev-h">The answer, graded</h2>
+    <p class="lede col">The platform states the ceiling of its own design. Observational transcriptomes can show an association. They cannot show a mechanism or a cause. That decision is useful in itself: bulk RNA signatures are the wrong readout for neuron–glioma coupling, and spatial or functional readouts are where a programme should go next.</p>
+    <div class="ladder" id="ladder">
+      <div class="rung out"><b>Causal</b><p>Out of reach for this design: no perturbation, randomisation or longitudinal data.</p></div>
+      <div class="rung lit"><b>Mechanistic</b><p>From the cited experiments only (mouse and xenograft models), never claimed from these data.</p></div>
+      <div class="rung reached"><b>Association · reached</b><p>The Proneural–Mesenchymal difference replicates in two independent cohorts, but not once normal-brain content is controlled for. Survival does not replicate.</p></div>
+      <div class="rung"><b>Plausibility</b><p>Receptor transcripts spread through tumour tissue in one section: a lead for spatial and functional follow-up.</p></div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <div class="row">
+      <span>NeuroBridge · built by Stefania Zoi · Python, scanpy, lifelines, Streamlit, Claude</span>
+      <span>Research exploration only. Not for diagnosis or treatment.</span>
+    </div>
+    <p class="cite" style="margin-top:14px">Data: TCGA-GBM via UCSC Xena · Chinese Glioma Genome Atlas (325, 693) · GEO GSE84465 (Darmanis et al. 2017) · 10x Genomics Visium Human Glioblastoma. Literature via Europe PMC.</p>
+  </div>
+</footer>
+
+<script>/*SPATIAL_DATA*/</script>
+<script>
+(() => {
+  const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const css = (n) => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+  const themeListeners = [];
+  const onTheme = (f) => themeListeners.push(f);
+  matchMedia("(prefers-color-scheme: light)").addEventListener("change", () => themeListeners.forEach(f => f()));
+  new MutationObserver(() => themeListeners.forEach(f => f())).observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
+  const NS = "http://www.w3.org/2000/svg";
+  const el = (tag, attrs, parent) => { const e = document.createElementNS(NS, tag); for (const k in attrs) e.setAttribute(k, attrs[k]); if (parent) parent.appendChild(e); return e; };
+  const rng = (() => { let s = 7; return () => (s = (s * 16807) % 2147483647) / 2147483647; })();
+
+  /* ---------------- hero: neuron-glioma network ---------------- */
+  const cv = document.getElementById("net"), cx = cv.getContext("2d");
+  let W = 0, H = 0, neurons = [], gliomas = [], axons = [], tubes = [], spikes = [], dpr = 1;
+  function buildNet() {
+    dpr = Math.min(2, window.devicePixelRatio || 1);
+    W = cv.clientWidth; H = cv.clientHeight; cv.width = W * dpr; cv.height = H * dpr; cx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    neurons = []; gliomas = []; axons = []; tubes = [];
+    const left = W < 700 ? 0.15 : 0.42;
+    for (let i = 0; i < 9; i++) {
+      const n = { x: W * (left + rng() * (1 - left)), y: H * (0.08 + rng() * 0.84), r: 5 + rng() * 3, dend: [] };
+      for (let d = 0; d < 5; d++) { const a = rng() * Math.PI * 2, L = 22 + rng() * 34; n.dend.push({ a, L, b: (rng() - .5) * 0.8 }); }
+      neurons.push(n);
+    }
+    for (let i = 0; i < 12; i++) gliomas.push({ x: W * (left + 0.05 + rng() * (0.93 - left)), y: H * (0.1 + rng() * 0.8), r: 9 + rng() * 7, ph: rng() * 6, glow: 0, wob: Array.from({ length: 9 }, () => 0.75 + rng() * 0.5) });
+    neurons.forEach(n => {
+      const t = [...gliomas].sort((a, b) => Math.hypot(a.x - n.x, a.y - n.y) - Math.hypot(b.x - n.x, b.y - n.y)).slice(0, 2);
+      t.forEach(g => { const mx = (n.x + g.x) / 2 + (rng() - .5) * 90, my = (n.y + g.y) / 2 + (rng() - .5) * 90; axons.push({ n, g, c: [n.x, n.y, mx, my, g.x, g.y] }); });
+    });
+    gliomas.forEach((g, i) => { const near = gliomas.map((h, j) => [j, Math.hypot(h.x - g.x, h.y - g.y)]).filter(([j]) => j !== i).sort((a, b) => a[1] - b[1]).slice(0, 2); near.forEach(([j]) => { if (j > i) tubes.push({ a: g, b: gliomas[j] }); }); });
+  }
+  const qpt = (c, t) => { const u = 1 - t; return [u * u * c[0] + 2 * u * t * c[2] + t * t * c[4], u * u * c[1] + 2 * u * t * c[3] + t * t * c[5]]; };
+  function drawNet(time) {
+    const neu = css("--neuron"), tum = css("--tumour"), sig = css("--signal");
+    cx.clearRect(0, 0, W, H);
+    cx.lineCap = "round";
+    tubes.forEach(t => { cx.strokeStyle = tum; cx.globalAlpha = 0.18 + 0.5 * Math.max(t.a.glow, t.b.glow); cx.lineWidth = 1.2; cx.beginPath(); cx.moveTo(t.a.x, t.a.y); cx.lineTo(t.b.x, t.b.y); cx.stroke(); });
+    axons.forEach(a => { cx.strokeStyle = neu; cx.globalAlpha = 0.28; cx.lineWidth = 1.1; cx.beginPath(); cx.moveTo(a.c[0], a.c[1]); cx.quadraticCurveTo(a.c[2], a.c[3], a.c[4], a.c[5]); cx.stroke(); });
+    neurons.forEach(n => {
+      cx.globalAlpha = 0.6; cx.strokeStyle = neu; cx.lineWidth = 1.4;
+      n.dend.forEach(d => { const x2 = n.x + Math.cos(d.a) * d.L, y2 = n.y + Math.sin(d.a) * d.L; cx.beginPath(); cx.moveTo(n.x, n.y); cx.lineTo(x2, y2); cx.lineTo(x2 + Math.cos(d.a + d.b) * d.L * .45, y2 + Math.sin(d.a + d.b) * d.L * .45); cx.stroke(); });
+      cx.globalAlpha = 0.95; cx.fillStyle = neu; cx.beginPath(); cx.arc(n.x, n.y, n.r, 0, 7); cx.fill();
+    });
+    gliomas.forEach(g => {
+      const breathe = reduce ? 0 : Math.sin(time / 900 + g.ph) * 0.06;
+      cx.beginPath();
+      g.wob.forEach((w, k) => { const a = (k / g.wob.length) * Math.PI * 2, r = g.r * (w + breathe); const x = g.x + Math.cos(a) * r, y = g.y + Math.sin(a) * r; k ? cx.lineTo(x, y) : cx.moveTo(x, y); });
+      cx.closePath(); cx.globalAlpha = 0.22 + 0.7 * g.glow; cx.fillStyle = tum; cx.fill(); cx.globalAlpha = 0.85; cx.strokeStyle = tum; cx.lineWidth = 1.3; cx.stroke();
+      if (g.glow > 0.02) { cx.globalAlpha = g.glow * 0.5; cx.beginPath(); cx.arc(g.x, g.y, g.r * (1.6 + (1 - g.glow) * 1.4), 0, 7); cx.strokeStyle = tum; cx.stroke(); }
+    });
+    spikes.forEach(s => { const [x, y] = qpt(s.a.c, s.t); cx.globalAlpha = 1; cx.fillStyle = sig; cx.beginPath(); cx.arc(x, y, 2.6, 0, 7); cx.fill(); cx.globalAlpha = 0.25; cx.beginPath(); cx.arc(x, y, 7, 0, 7); cx.fill(); });
+    cx.globalAlpha = 1;
+  }
+  let last = 0, nextSpike = 0;
+  function tick(time) {
+    const dt = Math.min(50, time - last); last = time;
+    if (time > nextSpike && axons.length) { spikes.push({ a: axons[Math.floor(rng() * axons.length)], t: 0 }); nextSpike = time + 260 + rng() * 520; }
+    spikes.forEach(s => s.t += dt / 1400);
+    spikes = spikes.filter(s => { if (s.t >= 1) { s.a.g.glow = 1; s.a.g.spreadAt = time + 260; return false; } return true; });
+    gliomas.forEach(g => {
+      if (g.spreadAt && time > g.spreadAt) { tubes.forEach(t => { const o = t.a === g ? t.b : t.b === g ? t.a : null; if (o && o.glow < 0.4) { o.glow = Math.max(o.glow, 0.7); } }); g.spreadAt = 0; }
+      g.glow = Math.max(0, g.glow - dt / 1600);
+    });
+    drawNet(time);
+    if (heroVisible) requestAnimationFrame(tick); else running = false;
+  }
+  let heroVisible = true, running = false;
+  buildNet();
+  if (reduce) { gliomas.slice(0, 4).forEach(g => g.glow = 0.7); drawNet(0); }
+  else {
+    new IntersectionObserver(([e]) => { heroVisible = e.isIntersecting; if (heroVisible && !running) { running = true; requestAnimationFrame(t => { last = t; tick(t); }); } }).observe(cv);
+  }
+  addEventListener("resize", () => { buildNet(); if (reduce) drawNet(0); });
+  onTheme(() => { if (reduce) drawNet(0); });
+
+  /* ---------------- synapse ---------------- */
+  const svg = document.getElementById("syn");
+  const G = (id) => svg.querySelector("#" + id);
+  const ves = G("vesicles"), glu = G("glu"), rec = G("receptors"), nl = G("nlgn"), bd = G("bdnf"), lab = G("labels");
+  [[220, 120], [260, 95], [300, 130], [340, 105], [245, 160], [320, 165], [280, 150]].forEach(([x, y]) => {
+    el("circle", { cx: x, cy: y, r: 14, fill: "none", stroke: "var(--neuron)", "stroke-width": 1.5, opacity: .8 }, ves);
+    for (let k = 0; k < 4; k++) el("circle", { cx: x + Math.cos(k * 1.7) * 6, cy: y + Math.sin(k * 1.7) * 6, r: 2.2, fill: "var(--signal)" }, ves);
+  });
+  const recs = [];
+  const recDef = [[190, "AMPA", "GRIA1/2", 1], [240, "AMPA", "", 1], [300, "NMDA", "GRIN2B", 2], [350, "AMPA", "", 1]];
+  recDef.forEach(([x, kind, name, step]) => {
+    const g = el("g", { "data-step": step }, rec);
+    el("rect", { x: x - 9, y: 262, width: 18, height: 26, rx: 5, fill: kind === "NMDA" ? "var(--immune)" : "var(--tumour)", opacity: .9 }, g);
+    el("rect", { x: x - 4, y: 256, width: 8, height: 10, rx: 3, fill: "var(--surface)", stroke: kind === "NMDA" ? "var(--immune)" : "var(--tumour)" }, g);
+    recs.push(g);
+  });
+  const trk = el("g", { "data-step": 4 }, rec);
+  el("rect", { x: 404, y: 258, width: 16, height: 30, rx: 6, fill: "var(--signal)", opacity: .9 }, trk);
+  const nlgnG = el("g", {}, nl);
+  el("path", { d: "M128 212 l-10 -26 l12 -2 l6 22 z", fill: "var(--neuron)", opacity: .9 }, nlgnG);
+  const shed = el("g", { opacity: 0 }, nl);
+  el("path", { d: "M0 0 l-8 -18 l10 -2 l5 16 z", fill: "var(--neuron)" }, shed);
+  const bdG = el("g", { opacity: 0 }, bd);
+  for (let k = 0; k < 5; k++) el("circle", { cx: 400 + (k % 3) * 9, cy: 228 + Math.floor(k / 3) * 9, r: 3.4, fill: "var(--signal)", stroke: "var(--bg)", "stroke-width": 1 }, bdG);
+  const L = (x, y, t, c, step, anchor = "middle") => { const tx = el("text", { x, y, "text-anchor": anchor, fill: c, "data-step": step }, lab); tx.textContent = t; return tx; };
+  L(136, 84, "VGLUT1 · SLC17A7", "var(--signal)", 0, "end");
+  L(176, 320, "AMPA · GRIA1 / GRIA2", "var(--tumour)", 1, "end");
+  L(300, 340, "NMDA · GRIN2B", "var(--immune)", 2, "middle");
+  L(108, 182, "NLGN3", "var(--neuron)", 3, "end");
+  L(430, 318, "TrkB · NTRK2", "var(--signal)", 4, "start");
+  L(400, 222, "BDNF", "var(--signal)", 4, "end");
+  let step = 0, gluP = [];
+  function setStep(s) {
+    step = s;
+    svg.querySelectorAll("[data-step]").forEach(e => e.setAttribute("opacity", +e.dataset.step === s ? 1 : 0.42));
+    ves.setAttribute("opacity", s === 0 ? 1 : 0.5);
+    bdG.setAttribute("opacity", s === 4 ? 1 : 0.15);
+    document.querySelectorAll(".step").forEach(e => e.classList.toggle("on", +e.dataset.step === s));
+  }
+  setStep(0);
+  if (!reduce) {
+    const io = new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting) setStep(+e.target.dataset.step); }), { rootMargin: "-45% 0px -45% 0px" });
+    document.querySelectorAll(".step").forEach(s => io.observe(s));
+    let synVisible = false;
+    new IntersectionObserver(([e]) => { synVisible = e.isIntersecting; if (synVisible) requestAnimationFrame(animSyn); }).observe(svg);
+    let lt = 0, emit = 0, shedT = 0;
+    function animSyn(t) {
+      const dt = Math.min(50, t - lt || 16); lt = t;
+      if (t > emit && (step <= 2)) { for (let k = 0; k < 3; k++) gluP.push({ x: 230 + rng() * 100, y: 205, vx: (rng() - .5) * .06, vy: .05 + rng() * .04, e: el("circle", { r: 2.4, fill: "var(--signal)" }, glu) }); emit = t + 420; }
+      gluP.forEach(p => { p.x += p.vx * dt; p.y += p.vy * dt; p.e.setAttribute("cx", p.x); p.e.setAttribute("cy", p.y); });
+      gluP = gluP.filter(p => { if (p.y > 258) { p.e.remove(); recs.forEach(r => { const bx = +r.firstChild.getAttribute("x") + 9; if (Math.abs(bx - p.x) < 16) { r.firstChild.setAttribute("opacity", 1); setTimeout(() => r.firstChild.setAttribute("opacity", .9), 140); } }); return false; } return true; });
+      if (step === 3) { shedT = (shedT + dt / 2600) % 1; shed.setAttribute("opacity", 1 - shedT * .3); shed.setAttribute("transform", `translate(${132 + shedT * 70} ${200 + shedT * 62}) rotate(${shedT * 90})`); } else shed.setAttribute("opacity", 0);
+      if (synVisible) requestAnimationFrame(animSyn);
+    }
+  }
+
+  /* ---------------- pipeline pulse ---------------- */
+  const agents = [...document.querySelectorAll(".agent")];
+  if (reduce) agents.forEach(a => a.classList.add("lit"));
+  else {
+    let i = 0, timer = null;
+    new IntersectionObserver(([e]) => {
+      if (e.isIntersecting && !timer) timer = setInterval(() => { agents.forEach((a, k) => a.classList.toggle("lit", k === i % agents.length || k === (i - 1 + agents.length) % agents.length && i % agents.length !== 0)); i++; }, 650);
+      if (!e.isIntersecting && timer) { clearInterval(timer); timer = null; }
+    }, { threshold: .4 }).observe(document.getElementById("pipeline"));
+  }
+
+  /* ---------------- charts (real numbers from the reference run) ---------------- */
+  const SUB = [
+    { lab: "TCGA (discovery)", n: 76, raw: [-1.058, -1.551, -0.566], res: [-0.521, -0.992, -0.051], c: "--immune" },
+    { lab: "CGGA-325 (validation)", n: 50, raw: [-1.188, -1.897, -0.480], res: [-0.378, -1.052, 0.295], c: "--tumour" },
+    { lab: "CGGA-693 (validation)", n: 75, raw: [-1.174, -1.672, -0.675], res: [0.068, -0.394, 0.530], c: "--neuron" },
+  ];
+  const sc = document.getElementById("subChart");
+  const X0 = 230, X1 = 730, gmin = -2, gmax = 0.75, xs = v => X0 + (v - gmin) / (gmax - gmin) * (X1 - X0);
+  [-2, -1.5, -1, -0.5, 0, 0.5].forEach(v => { el("line", { x1: xs(v), x2: xs(v), y1: 14, y2: 186, class: v === 0 ? "ref" : "axis", "stroke-width": 1 }, sc); const t = el("text", { x: xs(v), y: 206, "text-anchor": "middle" }, sc); t.textContent = v.toFixed(1); });
+  const tx = el("text", { x: (X0 + X1) / 2, y: 226, "text-anchor": "middle" }, sc); tx.textContent = "Hedges' g (Mesenchymal − Proneural)";
+  const subEls = SUB.map((d, i) => {
+    const y = 40 + i * 58;
+    const t = el("text", { x: 0, y: y + 4, class: "lab" }, sc); t.textContent = d.lab;
+    const nn = el("text", { x: 0, y: y + 22 }, sc); nn.textContent = "n = " + d.n;
+    const line = el("line", { y1: y, y2: y, class: "ci", stroke: `var(${d.c})` }, sc);
+    const pt = el("circle", { cy: y, r: 7, class: "pt", fill: `var(${d.c})` }, sc);
+    return { d, line, pt };
+  });
+  function drawSub(resid) {
+    subEls.forEach(({ d, line, pt }) => { const v = resid ? d.res : d.raw; line.setAttribute("x1", xs(v[1])); line.setAttribute("x2", xs(v[2])); pt.setAttribute("cx", xs(v[0])); });
+    const vd = document.getElementById("subVerdict");
+    vd.textContent = resid ? "does not replicate once normal brain is controlled for" : "replicated in 2 of 2 independent cohorts";
+    vd.className = "verdict " + (resid ? "no" : "yes");
+  }
+  drawSub(false);
+  const rb = document.getElementById("residBtn");
+  rb.addEventListener("click", () => { const on = rb.getAttribute("aria-pressed") !== "true"; rb.setAttribute("aria-pressed", on); rb.textContent = on ? "Show the uncorrected score" : "Control for normal-brain content"; drawSub(on); });
+
+  const comp = document.getElementById("compChart");
+  const COMP = [["TCGA", 0.713, "--immune"], ["CGGA-325", 0.674, "--tumour"], ["CGGA-693", 0.814, "--neuron"]];
+  const cxs = v => 90 + v * 250;
+  [0, 0.25, 0.5, 0.75, 1].forEach(v => { el("line", { x1: cxs(v), x2: cxs(v), y1: 8, y2: 128, class: "axis" }, comp); const t = el("text", { x: cxs(v), y: 146, "text-anchor": "middle" }, comp); t.textContent = v; });
+  const ct = el("text", { x: cxs(0.5), y: 164, "text-anchor": "middle" }, comp); ct.textContent = "Spearman ρ";
+  COMP.forEach(([k, v, c], i) => { const y = 22 + i * 38; const t = el("text", { x: 0, y: y + 14, class: "lab" }, comp); t.textContent = k; el("rect", { x: cxs(0), y, width: cxs(v) - cxs(0), height: 20, rx: 4, fill: `var(${c})`, opacity: .9 }, comp); const vt = el("text", { x: cxs(v) + 6, y: y + 14 }, comp); vt.textContent = v.toFixed(2); });
+
+  const sv = document.getElementById("survChart");
+  const SURV = [["TCGA", 1.159, 0.952, 1.410, "--immune"], ["CGGA-325", 0.750, 0.582, 0.968, "--tumour"], ["CGGA-693", 0.946, 0.774, 1.157, "--neuron"]];
+  const lx = v => 90 + (Math.log(v) - Math.log(0.5)) / (Math.log(2) - Math.log(0.5)) * 250;
+  [0.5, 0.75, 1, 1.5, 2].forEach(v => { el("line", { x1: lx(v), x2: lx(v), y1: 8, y2: 128, class: v === 1 ? "ref" : "axis" }, sv); const t = el("text", { x: lx(v), y: 146, "text-anchor": "middle" }, sv); t.textContent = v; });
+  const st = el("text", { x: lx(1), y: 164, "text-anchor": "middle" }, sv); st.textContent = "hazard ratio per SD";
+  SURV.forEach(([k, e, lo, hi, c], i) => { const y = 32 + i * 38; const t = el("text", { x: 0, y: y + 4, class: "lab" }, sv); t.textContent = k; el("line", { x1: lx(lo), x2: lx(hi), y1: y, y2: y, class: "ci", stroke: `var(${c})` }, sv); el("circle", { cx: lx(e), cy: y, r: 6, class: "pt", fill: `var(${c})` }, sv); });
+
+  const scs = document.getElementById("scChart");
+  const SC = [["NLGN3", 37], ["GRIA2", 29], ["GRIA1", 17], ["BDNF", 3], ["GRIN2B", 1], ["SLC17A7", 0]];
+  const bx = v => 120 + v / 40 * 600;
+  [0, 10, 20, 30, 40].forEach(v => { el("line", { x1: bx(v), x2: bx(v), y1: 6, y2: 206, class: "axis" }, scs); const t = el("text", { x: bx(v), y: 224, "text-anchor": "middle" }, scs); t.textContent = v + "%"; });
+  SC.forEach(([g, v], i) => { const y = 12 + i * 32; const t = el("text", { x: 0, y: y + 15, class: "lab" }, scs); t.textContent = g; el("rect", { x: bx(0), y, width: Math.max(2, bx(v) - bx(0)), height: 20, rx: 4, fill: g === "SLC17A7" || g === "BDNF" || g === "GRIN2B" ? "var(--faint)" : "var(--tumour)" }, scs); const vt = el("text", { x: bx(v) + 8, y: y + 15 }, scs); vt.textContent = v + "%"; });
+
+  /* ---------------- spatial map (real Visium spots) ---------------- */
+  const D = window.NB_SPATIAL;
+  const raw = Uint8Array.from(atob(D.b64), c => c.charCodeAt(0));
+  const N = D.n, ROW = raw.subarray(0, N), COL = raw.subarray(N, 2 * N), DOM = raw.subarray(2 * N, 3 * N);
+  const LAY = {}; D.layers.forEach((k, i) => LAY[k] = raw.subarray((3 + i) * N, (4 + i) * N));
+  const mapC = document.getElementById("spotmap"), mx = mapC.getContext("2d");
+  const DOMC = ["--neuron", "--tumour", "--immune", "--signal"];
+  const DOMN = ["neuron-enriched", "tumour / reactive glia", "myeloid-enriched", "vascular-enriched"];
+  const NOTES = {
+    domains: `<h3>Tissue domains</h3><p>Spots clustered by expression, each domain labelled by its strongest programme. Neuron-rich tissue sits in one corner: ${D.domainCounts[0]} of ${N} spots.</p>`,
+    neuron: `<h3>Mature-neuron programme</h3><p>Eight neuron marker genes per spot. This is the infiltrated brain that contaminates bulk samples.</p>`,
+    SLC17A7: `<h3>SLC17A7 · presynaptic</h3><p>The glutamate transporter follows neuron-rich tissue (ρ = 0.27 with the neuron programme), as a presynaptic gene should.</p>`,
+    GRIA2: `<h3>GRIA2 · postsynaptic</h3><p>The AMPA receptor gene is found in over half of all spots, spread through tumour regions and unrelated to neuronal content (ρ = −0.03).</p>`,
+    GAP43: `<h3>GAP43 · tumour microtubes</h3><p>Higher next to neuron-rich tissue, even after adjusting for each spot's own neuron score (Hedges' g = 0.76).</p>`,
+  };
+  let layer = "domains", mapFrom = null, mapT = 1;
+  function hexToRgb(h) { h = h.replace("#", ""); if (h.length === 3) h = h.split("").map(c => c + c).join(""); const n = parseInt(h, 16); return [n >> 16 & 255, n >> 8 & 255, n & 255]; }
+  function spotColors(lay) {
+    const out = new Array(N);
+    if (lay === "domains") { const cs = DOMC.map(c => hexToRgb(css(c))); for (let i = 0; i < N; i++) out[i] = cs[DOM[i]]; return out; }
+    const hue = hexToRgb(css(lay === "GRIA2" ? "--tumour" : lay === "SLC17A7" ? "--signal" : "--neuron")), base = hexToRgb(css("--line"));
+    const v = LAY[lay];
+    for (let i = 0; i < N; i++) { const t = Math.pow(v[i] / 255, 0.85); out[i] = [0, 1, 2].map(k => Math.round(base[k] + (hue[k] - base[k]) * t)); }
+    return out;
+  }
+  let cur = null;
+  function sizeMap() { const w = mapC.clientWidth; mapC.width = w * dpr; mapC.height = w * (78 / 116) * dpr; mx.setTransform(dpr, 0, 0, dpr, 0, 0); }
+  function drawMap(colors) {
+    const w = mapC.clientWidth, h = w * 78 / 116, sx = w / (D.colMax + 2), sy = h / (D.rowMax + 2), r = Math.min(sx * 1.05, sy * 0.62);
+    mx.clearRect(0, 0, w, h);
+    for (let i = 0; i < N; i++) { const c = colors[i]; mx.fillStyle = `rgb(${c[0]},${c[1]},${c[2]})`; mx.beginPath(); mx.arc((COL[i] + 1) * sx, (ROW[i] + 1) * sy, r, 0, 7); mx.fill(); }
+  }
+  function legend() {
+    const lg = document.getElementById("mapLegend");
+    if (layer === "domains") lg.innerHTML = DOMN.map((n, i) => `<span><i class="dot" style="background:var(${DOMC[i]})"></i>${n} (${D.domainCounts[i]})</span>`).join("");
+    else { const hue = layer === "GRIA2" ? "--tumour" : layer === "SLC17A7" ? "--signal" : "--neuron"; lg.innerHTML = `<span style="flex:1 1 100%"><div class="ramp" style="background:linear-gradient(90deg,var(--line),var(${hue}))"></div></span><span>low</span><span style="margin-left:auto">high (99th percentile)</span>`; }
+    document.getElementById("layerNote").innerHTML = NOTES[layer];
+  }
+  function setLayer(l, animate) {
+    const target = spotColors(l);
+    layer = l; legend();
+    document.querySelectorAll("[data-layer]").forEach(b => b.setAttribute("aria-pressed", b.dataset.layer === l));
+    if (!animate || reduce || !cur) { cur = target; drawMap(cur); return; }
+    const from = cur, t0 = performance.now(), dur = 700;
+    // ripple: spots change in order of distance from the neuron-rich corner
+    const step = (t) => {
+      const k = Math.min(1, (t - t0) / dur);
+      const mix = new Array(N);
+      for (let i = 0; i < N; i++) { const delay = (COL[i] / D.colMax) * 0.45; const u = Math.min(1, Math.max(0, (k - delay) / 0.55)); mix[i] = [0, 1, 2].map(j => Math.round(from[i][j] + (target[i][j] - from[i][j]) * u)); }
+      drawMap(mix);
+      if (k < 1) requestAnimationFrame(step); else cur = target;
+    };
+    requestAnimationFrame(step);
+  }
+  sizeMap(); setLayer("domains", false);
+  document.querySelectorAll("[data-layer]").forEach(b => b.addEventListener("click", () => setLayer(b.dataset.layer, true)));
+  addEventListener("resize", () => { sizeMap(); drawMap(cur); });
+  onTheme(() => { cur = spotColors(layer); drawMap(cur); legend(); });
+})();
+</script>
