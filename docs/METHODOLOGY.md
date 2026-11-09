@@ -9,6 +9,7 @@ The question has three parts: subgroups, neuron–tumour interactions and outcom
 | H1 | The candidate score differs between transcriptional subtypes | identical distributions | TCGA (discovery), CGGA ×2 (validation) | exploratory in TCGA, confirmatory in CGGA |
 | H2 | The candidate score is associated with overall survival after adjustment | adjusted HR per SD = 1 | TCGA, CGGA ×2 | confirmatory |
 | H3 | Candidate genes are expressed by neoplastic cells | not higher in neoplastic than in other cells | GSE84465 | exploratory |
+| H5 | In tissue, candidate genes extend beyond neuron-rich regions and neuron–glioma pairs co-localise | expression tracks neuronal content only; co-localisation no higher than shared domains predict | one Visium section | exploratory, descriptive |
 | H4 | Bulk associations are not explained by normal-brain content | effects vanish after neuron-marker adjustment | all bulk cohorts | sensitivity |
 
 **Evidence ceiling.** These are observational transcriptomic data without perturbation or longitudinal sampling. The highest attainable level is *statistical association*. Mechanistic statements come only from the cited experimental literature and are tagged as literature claims.
@@ -94,6 +95,29 @@ They are robustness checks, not new hypotheses, and are not multiplicity-correct
 - **Tests.** Wilcoxon rank-sum (scanpy) with BH correction. Neoplastic is compared with all other cells, or with a chosen reference such as OPC, and periphery with core within neoplastic cells.
 - **Pseudoreplication.** Cells are not independent; with four patients a pseudobulk test would have no power. The caveat is attached to every result.
 - **Ligand–receptor.** The score is mean ligand in the sender × mean receptor in the receiver, tested against a cell-label permutation null (one-sided, BH). Pairs are curated from neuron–glioma biology. This is co-expression, not evidence of interaction.
+
+## Spatial transcriptomics
+
+- **Data.** One 10x Visium GBM section (one patient). Every spatial result is a case-level description.
+- **Preprocessing.** Spots with at least 500 UMIs and 250 genes; normalise_total (1e4), log1p, 2,000 HVGs, 30 PCs, kNN, Leiden domains (resolution 0.6), all seeded.
+- **Programmes.** scanpy `score_genes` for mature-neuron, tumour/reactive-glial, myeloid and vascular sets. Each domain is labelled by its most enriched programme; these are proxies, not cell-type calls.
+- **Spatial structure.** Moran's I on the Visium hexagonal neighbour graph, row-standardised, with a two-sided permutation p (999 permutations).
+- **Interface analysis.**
+  - Neuron-rich spots are the top 20% of the neuron programme.
+  - For all other spots, ring distance to the nearest neuron-rich spot is computed by breadth-first search on the hex grid.
+  - Spearman correlation of expression with distance, also as a partial correlation controlling for the spot's own neuron score. Genes like GAP43 and NTRK2 are expressed by neurons too, so this guards against partial-volume effects.
+  - Interface spots (1–2 rings) vs distal spots (5 or more rings) with Hedges' g.
+- **Ligand–receptor co-localisation.**
+  - Statistic: the mean over spots of ligand(spot) × mean receptor(six neighbours).
+  - Two nulls. The global null permutes the ligand across all spots. The domain-stratified null permutes the ligand only within its spatial domain, so co-localisation must exceed what shared tissue composition produces.
+  - Claims use the domain-stratified null with BH correction.
+- **Limits.** Spots are not independent, so spot-level p-values outside the permutation tests are optimistic. Transcript co-localisation is not interaction.
+
+## Question-aware analysis
+
+- **Named genes.** Genes named in the question (and present in the data) become a `user_genes` panel. When four or fewer are named, each is also tested alone, including cross-cohort survival validation.
+- **Restrictions.** "IDH-wildtype" in the question restricts survival and validation analyses to IDH-wildtype tumours, using non-G-CIMP as the proxy in TCGA. IDH and G-CIMP are then removed from the adjustment set.
+- **Verdicts.** If validation cohorts disagree in direction, the verdict is "not replicated (inconsistent directions across cohorts)", never "direction consistent".
 
 ## Claim grading and review
 

@@ -85,8 +85,15 @@ def validate_signature_survival(
         rationale = ["Replication is inconsistent across cohorts; consider cohort differences (platform, population, treatment era)."]
     else:
         dirs = [r.direction_consistent for r in val]
-        verdict = "not replicated" if not any(dirs) else "direction consistent but not significant in validation"
-        rationale = ["Validation cohorts do not reproduce a significant association in the discovery direction."]
+        if all(dirs):
+            verdict = "direction consistent but not significant in validation"
+            rationale = ["Every validation cohort points in the discovery direction, but none reaches p < alpha."]
+        elif any(dirs):
+            verdict = "not replicated (inconsistent directions across cohorts)"
+            rationale = ["Validation cohorts disagree in direction and none reproduces a significant association in the discovery direction."]
+        else:
+            verdict = "not replicated"
+            rationale = ["Validation cohorts do not reproduce a significant association in the discovery direction."]
     if pooled is not None:
         rationale.append(f"Random-effects pooled HR per SD = {np.exp(pooled['random_log_hr']):.2f} (I^2 = {pooled['I2']:.0f}%); pooled estimates include the discovery cohort and are descriptive.")
         if pooled["I2"] > 50:

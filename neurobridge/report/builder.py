@@ -28,6 +28,10 @@ REPORT_FIGURES = [
     ("sensitivity_neuronal_activity_candidates", "Sensitivity analyses"),
     ("dotplot_celltype", "Cell-type expression"),
     ("umap_celltype", "Single-cell landscape"),
+    ("spatial_domains", "Spatial domains (Visium)"),
+    ("spatial_candidate", "Candidate score in tissue"),
+    ("spatial_interface_gene", "Gradient from neuron-rich tissue"),
+    ("spatial_lr", "Ligand-receptor co-localisation"),
     ("volcano_neuronal_activity_candidates_tcga_gbm_rnaseq", "Differential expression"),
     ("enrichment_gsea_MSigDB_Hallmark_2020_tcga_gbm_rnaseq", "Hallmark GSEA"),
 ]
@@ -80,7 +84,8 @@ def build_markdown(result: InvestigationResult, ws, figure_paths: Optional[dict[
     # 1 executive summary
     add("## 1. Executive summary")
     add("")
-    key_ids = ["S1", "S2", "S3", "C1", "O2", "SC1", "I1"]
+    key_ids = ["S1", "S2", "S3", "C1", "O2", "SC1", "SP1", "SP3", "I1"]
+    key_ids = key_ids[:5] + [c["id"] for c in claims if c["id"].startswith("OG_")] + key_ids[5:]
     for k in key_ids:
         c = next((x for x in claims if x["id"] == k), None)
         if c:
@@ -153,6 +158,7 @@ def build_markdown(result: InvestigationResult, ws, figure_paths: Optional[dict[
     add("- **Survival.** Overall survival in months. Kaplan-Meier with Greenwood CIs and log-rank test; Cox proportional hazards (lifelines, Efron ties) with the score standardised (HR per SD); covariates age, sex and the IDH proxy available in each cohort (G-CIMP in TCGA; IDH and MGMT in CGGA); complete-case analysis; PH assumption tested on scaled Schoenfeld residuals.")
     add("- **Validation rule.** A hypothesis is called replicated in a cohort only if the estimate has the same sign as in discovery and p < 0.05 in that independent cohort; random-effects (DerSimonian-Laird) pooling is reported descriptively with I^2.")
     add("- **Composition control.** Mean z-score of eight mature-neuron markers as a proxy for infiltrated normal brain; used as a covariate and for residualisation.")
+    add("- **Spatial.** 10x Visium GBM section: spots with >= 500 UMIs and >= 250 genes; normalise_total, log1p, HVG, PCA, Leiden domains; programme scores (neuron, tumour/reactive-glial, myeloid, vascular). Moran's I on the hexagonal neighbour graph (row-standardised, 999 permutations). Neuron-rich spots = top 20% of the neuron programme; among other spots, Spearman of expression with ring distance, also partialled on the spot's own neuron score; interface (1-2 rings) vs distal (>= 5 rings) Hedges' g. Ligand-receptor co-localisation = mean of ligand(spot) x mean receptor(neighbours), tested against global and domain-stratified ligand permutations, BH. One patient: descriptive.")
     add("- **Single cell.** Scanpy: cells with >= 500 genes and < 20% mitochondrial reads; normalise_total (1e4), log1p, 2,000 HVGs (patient-aware), PCA (30), kNN (k = 15), UMAP, Leiden; author cell-type annotations; Wilcoxon rank-sum with BH.")
     add("")
 
@@ -175,7 +181,7 @@ def build_markdown(result: InvestigationResult, ws, figure_paths: Optional[dict[
 
     add("## 7. Statistical evidence")
     add("")
-    for tid in ["pairwise_neuronal_activity_candidates_tcga_gbm_rnaseq", "composition_confounding", "sensitivity_neuronal_activity_candidates", "sc_neoplastic_vs_rest", "sc_score_by_celltype"]:
+    for tid in ["pairwise_neuronal_activity_candidates_tcga_gbm_rnaseq", "composition_confounding", "sensitivity_neuronal_activity_candidates", "sc_neoplastic_vs_rest", "sc_score_by_celltype", "spatial_correlations", "spatial_interface", "spatial_ligand_receptor"]:
         if tid in ws.tables:
             add(f"**{tid.replace('_', ' ')}**")
             add("")
@@ -217,6 +223,7 @@ def build_markdown(result: InvestigationResult, ws, figure_paths: Optional[dict[
     for a in [
         "**Sample composition.** Bulk neuronal transcripts can come from infiltrated or adjacent normal cortex; Proneural and Neural samples may contain more normal brain. The neuron-marker control addresses this only partly.",
         "**Tumour-cell state.** OPC-like and NPC-like neoplastic states (Neftel et al. 2019) express synaptic genes intrinsically, which would also raise the score in Proneural tumours.",
+        "**Spot resolution.** Visium spots mix several cells, so gradients near neuron-rich tissue can reflect residual neuronal content even after adjustment.",
         "**Sampling site.** Resections at the infiltrative margin contain more neurons than necrotic core samples; anatomical sampling is not recorded in these cohorts.",
         "**Subtype misclassification.** Projected labels in CGGA can bias contrasts.",
         "**Platform and population.** TCGA (US, HiSeq 2000) and CGGA (China, HiSeq 2000/2500 and 4000) differ in platform, ancestry and treatment era.",
@@ -258,7 +265,7 @@ def build_markdown(result: InvestigationResult, ws, figure_paths: Optional[dict[
     add("")
     for f in [
         "Deconvolve bulk cohorts with a GBM single-cell reference (e.g. Neftel 2019 states) and test whether the score is carried by malignant OPC/NPC-like fractions or by normal neurons.",
-        "Score neuron-glioma interaction directly in spatial transcriptomics (Visium / Xenium GBM data, e.g. Ravi et al. 2022): co-localisation of neuronal ligand (NLGN3, BDNF) and glioma receptor (GRIA2, NTRK2) expression at the infiltrative edge.",
+        "Extend the spatial analysis from one section to many patients (e.g. Ravi et al. 2022 Visium cohort) so that co-localisation and interface gradients can be tested across patients rather than described in one case; add single-cell-resolution spatial data (Xenium / MERFISH) to resolve partial-volume effects.",
         "Ligand-receptor inference (e.g. CellChat / LIANA) on a larger 10x GBM atlas with more captured neurons.",
         "Test the survival hypothesis with an exposure closer to the biology (e.g. a tumour-intrinsic synaptic programme, or MRI-based functional connectivity as in Krishna et al. 2023).",
         "Experimental follow-up in patient-derived models: NLGN3 or AMPA-receptor perturbation in co-culture with neurons, stratified by transcriptional state.",

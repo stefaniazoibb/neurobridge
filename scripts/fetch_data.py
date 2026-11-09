@@ -17,6 +17,9 @@ if __name__ == "__main__":
         print(d, load_cohort(d).summary())
     a = load_single_cell("gse84465_darmanis")
     print("gse84465_darmanis", a.n_obs, "cells")
+    from neurobridge.data.loaders import load_spatial
+
+    print("visium_gbm_10x", load_spatial().n_obs, "spots")
     for lib in LIBRARIES:
         print(lib, len(load_library(lib)), "gene sets")
     print(len(fetch_pmids([r["pmid"] for r in KEY_REFERENCES])), "key references verified")

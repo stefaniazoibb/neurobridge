@@ -30,6 +30,14 @@ The numbers below were checked against the sources on 2026-11-09 and are recompu
 - **Cells.** Immune 1,847; Neoplastic 1,091; OPC 406; Astrocyte 88; Oligodendrocyte 85; Vascular 51; Neuron 21. The GEO label "Astocyte" is corrected to "Astrocyte".
 - **Publication.** Darmanis et al. 2017, *Cell Reports*, PMID 29091775.
 
+### 10x Visium Human Glioblastoma: spatial reference
+- **Files.** 10x Genomics dataset "Human Glioblastoma: Whole Transcriptome Analysis" (Space Ranger 1.2.0, licence CC BY 4.0), about 30 MB:
+  - `https://cf.10xgenomics.com/samples/spatial-exp/1.2.0/Parent_Visium_Human_Glioblastoma/Parent_Visium_Human_Glioblastoma_filtered_feature_bc_matrix.h5`
+  - `..._spatial.tar.gz` (H&E images, spot positions, scale factors), extracted with tarfile's `data` filter
+  - `..._metrics_summary.csv`
+- **Content.** 3,468 tissue spots × 36,601 genes from one section of one patient. No clinical annotation; raw reads withheld by 10x for donor anonymity.
+- **Caveat.** A single case: results are descriptive.
+
 ### TCGA-GBM U133A array: platform check only
 - **File.** Xena `TCGA.GBM.sampleMap/HT_HG-U133A`, 12,042 genes × 539 samples.
 - **Caveat.** Same patients as TCGA RNA-seq, so it is never used as validation.
@@ -48,7 +56,7 @@ The numbers below were checked against the sources on 2026-11-09 and are recompu
 | CELLxGENE glioma collections | Listed live with cell counts and file sizes; h5ad files are 1.2–7.3 GB |
 | GSE131928 (Neftel 2019) | ~1 GB RAW tar of per-sample matrices; cell-state scores must be reconstructed |
 | GSE16011 (Gravendeel 2009) | Survival is not deposited in GEO |
-| GBM spatial (Ravi 2022, Visium) | Multi-GB archives without a compact documented subset |
+| GBM spatial cohort (Ravi 2022, Visium, multiple patients) | Multi-GB archive; the next step to test the spatial observations across patients |
 
 ## Demonstration data
 

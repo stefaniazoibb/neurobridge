@@ -140,3 +140,14 @@ def safe_call(fn, *args, what: str = "operation", **kwargs):
 
 def disclaimer() -> None:
     st.caption("NeuroBridge is a research exploration platform. It does not make diagnostic or treatment recommendations. All results are computed from public data during the session; associations are not causal claims.")
+
+
+@st.cache_resource(show_spinner="Loading and processing the Visium section (first load downloads ~30 MB)...")
+def processed_spatial(dataset_id: str = "visium_gbm_10x"):
+    from neurobridge.analysis import spatial as spa
+    from neurobridge.data.loaders import load_spatial
+    from neurobridge.data.spatial import lowres_image
+
+    a, rec = spa.preprocess_spatial(load_spatial(dataset_id))
+    dom = spa.annotate_domains(a)
+    return a, rec, dom, spa.hex_neighbours(a.obs), lowres_image(a)

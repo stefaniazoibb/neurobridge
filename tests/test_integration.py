@@ -24,6 +24,7 @@ def offline(monkeypatch, tmp_path):
 @requires_tcga
 @requires_cgga
 @requires_sc
+@pytest.mark.skipif(not __import__("tests.conftest", fromlist=["cached"]).cached("spatial/visium_gbm_10x/filtered_feature_bc_matrix.h5"), reason="Visium not cached")
 @pytest.mark.slow
 def test_full_investigation_offline(offline):
     from neurobridge.agents.orchestrator import DEMO_QUESTION, run_investigation
@@ -34,7 +35,8 @@ def test_full_investigation_offline(offline):
     assert tools["validate_across_cohorts"] == "succeeded"
     assert tools["perform_cell_type_analysis"] == "succeeded"
     ids = {c["id"] for c in res.claims}
-    assert {"S1", "S2", "C1", "O2", "SC1"} <= ids
+    assert {"S1", "S2", "C1", "O2", "SC1", "SP1", "SP3"} <= ids
+    assert tools["perform_spatial_analysis"] == "succeeded"
     for c in res.claims:
         if c["kind"] in ("exploratory", "confirmatory", "sensitivity"):
             assert c["analyses"], c["id"]

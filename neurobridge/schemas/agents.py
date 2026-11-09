@@ -72,6 +72,8 @@ class ResearchPlan(BaseModel):
     datasets_preferred: list[str]
     confounders: list[str]
     evidence_ceiling: str = Field(description="Highest evidence level this design can reach")
+    restrictions: list[str] = Field(default_factory=list, description="Population restrictions requested in the question, e.g. IDH-wildtype")
+    gene_level: list[str] = Field(default_factory=list, description="Genes named in the question that are analysed individually")
     planner: str = Field("deterministic", description="deterministic or LLM-assisted")
     notes: list[str] = Field(default_factory=list)
 

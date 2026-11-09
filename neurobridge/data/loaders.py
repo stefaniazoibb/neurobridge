@@ -27,3 +27,12 @@ def load_single_cell(dataset_id: str):
     if dataset_id == "gse84465_darmanis":
         return geo.load_darmanis_gse84465(rec)
     raise KeyError(f"{dataset_id} is not an ingestible single-cell dataset")
+
+
+@lru_cache(maxsize=1)
+def load_spatial(dataset_id: str = "visium_gbm_10x"):
+    from neurobridge.data import spatial
+
+    if dataset_id != "visium_gbm_10x":
+        raise KeyError(f"{dataset_id} is not an ingestible spatial dataset")
+    return spatial.load_visium_gbm(get_dataset(dataset_id))

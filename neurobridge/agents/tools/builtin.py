@@ -138,6 +138,12 @@ class LoadInput(BaseModel):
 @register("load_expression_data", "Download (if needed) and load a bulk expression cohort or single-cell dataset with harmonised clinical variables and file provenance (SHA-256).", LoadInput, "data", retryable=True)
 def load_expression_data(ws: Workspace, inp: LoadInput) -> ToolOutput:
     rec = get_dataset(inp.dataset_id)
+    if inp.dataset_id == "visium_gbm_10x":
+        from neurobridge.data.loaders import load_spatial
+
+        a = load_spatial(inp.dataset_id)
+        ws.single_cell[inp.dataset_id + ":raw"] = a
+        return ToolOutput(summary=f"{a.n_obs} tissue spots x {a.n_vars} genes (one section, one patient)", limitations=list(a.uns.get("notes", [])) + rec.limitations, data={"n_spots": int(a.n_obs)})
     if inp.dataset_id == "gse84465_darmanis":
         a = load_single_cell(inp.dataset_id)
         ws.single_cell[inp.dataset_id + ":raw"] = a
@@ -309,19 +315,26 @@ class SurvivalInput(BaseModel):
     panel_id: str = "neuronal_activity_candidates"
     covariates: list[str] = Field(default_factory=lambda: ["age", "sex", "subtype", "g_cimp", "idh_status", "mgmt_status"])
     split: Literal["median", "tertiles"] = "median"
+    idh_wildtype_only: bool = False
 
 
 @register("perform_survival_analysis", "Kaplan-Meier (score split) with log-rank, univariable and multivariable Cox PH (per-SD HR) with Schoenfeld-residual PH tests, in primary tumours.", SurvivalInput, "statistics")
 def perform_survival_analysis(ws: Workspace, inp: SurvivalInput) -> ToolOutput:
     cohort = _cohort(ws, inp.dataset_id)
     c = cohort.primary_tumours()
+    restr = ""
+    if inp.idh_wildtype_only:
+        m, restr = _idh_wt_mask(c)
+        c = c.subset(c.clinical.index[m.fillna(False).astype(bool)])
     p = _panel(inp.panel_id)
     s = pd.Series(score_signature(c, p.genes, inp.panel_id).scores)
     km = kaplan_meier(c.clinical, dichotomise(s, inp.split), f"{inp.panel_id} score ({inp.split} split)", inp.dataset_id)
-    cov = [v for v in inp.covariates if v in c.clinical and c.clinical[v].notna().mean() >= 0.5]
+    cov = [v for v in inp.covariates if v in c.clinical and c.clinical[v].notna().mean() >= 0.5 and not (inp.idh_wildtype_only and v in ("idh_status", "g_cimp"))]
     uni = cox_model(c.clinical, s, inp.panel_id, inp.dataset_id, [])
     multi = cox_model(c.clinical, s, inp.panel_id, inp.dataset_id, cov) if cov else None
     refs = [ws.put("km", km), ws.put("cox", uni)] + ([ws.put("cox", multi)] if multi else [])
+    if restr:
+        km.record.parameters["restriction"] = restr
     figs = [ws.put_figure(f"km_{inp.panel_id}_{inp.dataset_id}", F.kaplan_meier_figure(km, f"Overall survival by {p.name.split('(')[0].strip()} score: {inp.dataset_id}"))]
     if multi:
         figs.append(ws.put_figure(f"cox_{inp.panel_id}_{inp.dataset_id}", F.cox_forest_figure(multi, f"Multivariable Cox model: {inp.dataset_id}")))
@@ -331,7 +344,7 @@ def perform_survival_analysis(ws: Workspace, inp: SurvivalInput) -> ToolOutput:
     dropped = sorted(set(inp.covariates) - set(cov))
     if dropped:
         lims.append(f"covariates unavailable or >50% missing in {inp.dataset_id}: {dropped}")
-    summ = f"log-rank p = {km.logrank_p:.3f}; univariable HR/SD = {r_uni.hr:.2f} ({r_uni.hr_ci_low:.2f}-{r_uni.hr_ci_high:.2f}), p = {r_uni.p:.3f}"
+    summ = (f"[{restr}, n = {len(c.samples)}] " if restr else "") + f"log-rank p = {km.logrank_p:.3f}; univariable HR/SD = {r_uni.hr:.2f} ({r_uni.hr_ci_low:.2f}-{r_uni.hr_ci_high:.2f}), p = {r_uni.p:.3f}"
     if r_multi:
         summ += f"; adjusted HR/SD = {r_multi.hr:.2f} ({r_multi.hr_ci_low:.2f}-{r_multi.hr_ci_high:.2f}), p = {r_multi.p:.3f} [{', '.join(multi.covariates_adjusted)}]; PH ok: {multi.ph_assumption_ok}"
     return ToolOutput(summary=summ, refs=refs, figures=figs, limitations=lims, data={"logrank_p": km.logrank_p, "hr_uni": r_uni.hr, "p_uni": r_uni.p, "hr_adj": r_multi.hr if r_multi else None, "p_adj": r_multi.p if r_multi else None, "ph_ok": multi.ph_assumption_ok if multi else uni.ph_assumption_ok,
@@ -462,6 +475,7 @@ class ValidateInput(BaseModel):
     group_b: str = "Proneural"
     covariates: list[str] = Field(default_factory=lambda: ["age", "sex", "g_cimp", "idh_status", "mgmt_status"])
     residualise_on_neuron_markers: bool = False
+    idh_wildtype_only: bool = False
 
 
 @register("validate_across_cohorts", "Confirmatory replication of a pre-specified hypothesis in independent cohorts (direction + significance rule, random-effects meta-analysis). Never reports 'validated' from one cohort.", ValidateInput, "validation")
@@ -475,8 +489,21 @@ def validate_across_cohorts(ws: Workspace, inp: ValidateInput) -> ToolOutput:
     if inp.hypothesis == "survival_association":
         if inp.residualise_on_neuron_markers:
             lims.append("residualised survival validation is reported in the sensitivity analysis")
-        vs, _ = validate_signature_survival({i: ws.cohorts[i] for i in ids}, inp.discovery_id, p.genes, inp.panel_id, inp.covariates)
-        fid = ws.put_figure(f"validation_survival_{inp.panel_id}", F.validation_forest_figure(vs))
+        cohorts = {i: ws.cohorts[i] for i in ids}
+        covs = inp.covariates
+        if inp.idh_wildtype_only:
+            restricted = {}
+            for i, co in cohorts.items():
+                pt = co.primary_tumours()
+                m, _ = _idh_wt_mask(pt)
+                restricted[i] = pt.subset(pt.clinical.index[m.fillna(False).astype(bool)])
+            cohorts = restricted
+            covs = [v for v in covs if v not in ("idh_status", "g_cimp")]
+            lims.append("Restricted to IDH-wildtype tumours (non-G-CIMP as proxy in TCGA); IDH/G-CIMP removed from the adjustment set.")
+        vs, _ = validate_signature_survival(cohorts, inp.discovery_id, p.genes, inp.panel_id, covs)
+        if inp.idh_wildtype_only:
+            vs.hypothesis += " in IDH-wildtype tumours"
+        fid = ws.put_figure(f"validation_survival_{inp.panel_id}", F.validation_forest_figure(vs, f"Cross-cohort validation: {p.name} and overall survival"))
     else:
         cs = {}
         for i in ids:
@@ -531,3 +558,52 @@ def generate_scientific_report(ws: Workspace, inp: ReportInput) -> ToolOutput:
     # The report needs the full investigation context; the orchestrator calls neurobridge.report.builder directly
     # and this tool exists so the step is logged and can be invoked by an external (MCP) client.
     return ToolOutput(summary="report requested", data={"title": inp.title})
+
+
+# ---------------------------------------------------------------- spatial
+class SpatialInput(BaseModel):
+    dataset_id: str = "visium_gbm_10x"
+    panel_id: str = "neuronal_activity_candidates"
+    extra_genes: list[str] = Field(default_factory=lambda: ["NTRK2", "THBS1", "GAP43", "GJA1"])
+    n_perm: int = Field(999, ge=99, le=9999)
+
+
+@register("perform_spatial_analysis", "Spatial transcriptomics (Visium): spot QC, spatial domains, programme scores, Moran's I, neuron-interface gradients and ligand-receptor neighbour co-localisation with domain-stratified permutation nulls.", SpatialInput, "bioinformatics", retryable=True)
+def perform_spatial_analysis(ws: Workspace, inp: SpatialInput) -> ToolOutput:
+    from neurobridge.analysis import spatial as spa
+    from neurobridge.data.loaders import load_spatial
+    from neurobridge.data.spatial import lowres_image
+
+    key = inp.dataset_id + ":processed"
+    if key not in ws.single_cell:
+        a, rec_pre = spa.preprocess_spatial(load_spatial(inp.dataset_id))
+        ws.single_cell[key] = a
+        ws.put("spatial_preprocess", rec_pre)
+    a = ws.single_cell[key]
+    dom = spa.annotate_domains(a)
+    p = _panel(inp.panel_id)
+    res, rec_p = spa.spatial_programme_analysis(a, p.genes, n_perm=inp.n_perm)
+    genes_if = list(dict.fromkeys(p.genes + inp.extra_genes))
+    itab, dist, rec_i = spa.interface_analysis(a, genes_if, res["neighbours"])
+    lr, rec_lr = spa.neighbour_lr(a, res["neighbours"], n_perm=inp.n_perm)
+    for kind, rec, tab in [("spatial_programmes", rec_p, res["correlations"]), ("spatial_interface", rec_i, itab), ("spatial_lr", rec_lr, lr)]:
+        ws.put(kind, {"record": rec.model_dump(mode="json"), "table": tab.to_dict(orient="records")})
+    img = lowres_image(a)
+    base = f"Visium section (10x Genomics, one GBM patient), {a.n_obs} spots after QC."
+    ws.put_figure("spatial_domains", F.spatial_figure(a, a.obs["domain_programme"].values, "Spatial domains by dominant programme", base + f" {dom.shape[0]} Leiden domains on spot expression, each coloured by its most enriched programme (neuron, tumour/reactive-glial, myeloid, vascular); per-domain table in the table view. Programme labels are proxies, not cell-type calls.", continuous=False, image=img))
+    ws.put_figure("spatial_candidate", F.spatial_figure(a, a.obs["candidate_score"].values, "Candidate-gene score per spot", base + f" scanpy score_genes of {', '.join(p.genes)}. Compare with the mature-neuron programme map. Moran's I = {res['correlations'].set_index('feature').loc['candidate_score', 'morans_I']:.2f}.", image=img))
+    ws.put_figure("spatial_neuron", F.spatial_figure(a, a.obs["prog_neuron"].values, "Mature-neuron programme per spot", base + " Score of SNAP25, SYT1, RBFOX3, GABRA1, NEFL, STMN2, SYN1, GAD1. The top 20% of spots define the neuron-rich region used in the interface analysis.", image=img))
+    top_if = itab[itab.feature != "candidate_score"].sort_values("p_distance_neuron_adjusted").iloc[0]["feature"]
+    ws.put_figure("spatial_interface_gene", F.spatial_figure(a, spa._gene(a, top_if), f"{top_if} expression per spot", base + f" log1p(CP10k). {top_if} shows the strongest neuron-adjusted gradient with distance to neuron-rich spots (rings), adjusted for each spot's neuron score.", image=img))
+    lrs = lr.copy()
+    lrs["pair"] = lrs["ligand"] + " → " + lrs["receptor"]
+    fr = [{"label": r.pair, "est": r.z_domain, "lo": r.z_domain, "hi": r.z_domain, "p": r.p_domain, "color": "#2a78d6" if r.q_domain < 0.05 else "#9a9890"} for r in lrs.itertuples()]
+    ws.put_figure("spatial_lr", F.forest_figure(fr, "Ligand–receptor neighbour co-localisation (domain-stratified null)", f"z-score of the observed neighbour co-expression against a null in which the ligand is permuted within spatial domains ({inp.n_perm} permutations). Blue: BH q < 0.05. Co-localisation of transcripts, not evidence of interaction.", ref=0.0, xlabel="z (domain-stratified)", log_x=False))
+    tids = [ws.put_table("spatial_correlations", res["correlations"]), ws.put_table("spatial_interface", itab), ws.put_table("spatial_ligand_receptor", lr), ws.put_table("spatial_domains", dom.reset_index())]
+    cor = res["correlations"].set_index("feature")
+    lims = list(dict.fromkeys(rec_p.limitations + rec_i.limitations + rec_lr.limitations))
+    return ToolOutput(
+        summary=f"{a.n_obs} spots, {dom.shape[0]} domains; candidate score vs neuron programme rho = {cor.loc['candidate_score', 'rho_neuron']:.2f}; {int((lr.q_domain < 0.05).sum())}/{len(lr)} ligand-receptor pairs co-localise beyond domain composition",
+        figures=["spatial_domains", "spatial_candidate", "spatial_neuron", "spatial_interface_gene", "spatial_lr"], tables=tids, limitations=lims,
+        data={"n_spots": int(a.n_obs), "correlations": res["correlations"].to_dict(orient="records"), "interface": itab.to_dict(orient="records"), "lr": lr.to_dict(orient="records"),
+              "n_neuron_rich": rec_i.parameters["n_neuron_rich"], "analysis_ids": [rec_p.analysis_id, rec_i.analysis_id, rec_lr.analysis_id]})

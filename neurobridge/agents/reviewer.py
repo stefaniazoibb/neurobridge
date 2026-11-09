@@ -56,6 +56,8 @@ class ReviewerAgent(Agent):
                 issues.append({"severity": "major", "claim": c["id"], "issue": "significant survival association in a validation cohort points opposite to discovery; cannot be read as support for the hypothesis", "action": "reported as heterogeneity, not replication"})
         if o.get("projection"):
             issues.append({"severity": "minor", "claim": "S2", "issue": f"validation-cohort subtypes are classifier projections (TCGA CV balanced accuracy {o['projection'].data['cv_bacc']:.2f}); misclassification biases between-subtype differences toward zero"})
+        if o.get("spatial"):
+            issues.append({"severity": "minor", "claim": "SP1-SP3", "issue": "spatial results come from one section of one patient and are descriptive; spot-level tests ignore spatial autocorrelation except where a permutation null is used"})
         if o.get("single_cell"):
             issues.append({"severity": "minor", "claim": "SC1", "issue": "single-cell tests treat cells as independent replicates (4 patients); p-values are optimistic"})
         failed = [t for t in ctx.log.tool_calls if t.status == ToolStatus.FAILED]

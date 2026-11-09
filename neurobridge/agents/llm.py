@@ -9,7 +9,7 @@ from typing import Optional, TypeVar
 
 from pydantic import BaseModel
 
-from neurobridge.config import get_settings
+from neurobridge.config import REPO_ROOT, get_settings
 from neurobridge.logging_utils import get_logger, log_event
 
 log = get_logger(__name__)
@@ -41,6 +41,9 @@ def structured(system: str, prompt: str, schema: type[T], max_tokens: int = 4000
     except ImportError as exc:
         raise LLMUnavailable("anthropic SDK not installed") from exc
     try:
+        from dotenv import load_dotenv
+
+        load_dotenv(REPO_ROOT / ".env", override=False)  # makes ANTHROPIC_API_KEY from .env visible to the SDK
         client = anthropic.Anthropic()
         resp = client.messages.parse(
             model=s.llm_model,

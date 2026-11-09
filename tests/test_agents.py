@@ -103,3 +103,13 @@ def test_llm_disabled_by_default():
     if provider_status()["provider"] == "none":
         with pytest.raises(LLMUnavailable):
             structured("s", "p", _In)
+
+
+def test_planner_gene_level_and_idh_restriction():
+    from neurobridge.agents.planner import deterministic_plan
+
+    p = deterministic_plan("Is NLGN3 or BDNF expression associated with overall survival in IDH-wildtype glioblastoma?")
+    assert p.restrictions == ["IDH-wildtype"]
+    assert p.gene_level == ["NLGN3", "BDNF"] and "user_genes" in p.gene_set_ids
+    p2 = deterministic_plan("Is neuronal signalling associated with survival?")
+    assert p2.restrictions == [] and p2.gene_level == []

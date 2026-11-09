@@ -16,6 +16,7 @@ def test_catalog_records_complete():
     for d in cat:
         assert d.limitations, f"{d.dataset_id} has no limitations"
         assert not d.is_demo
+    assert "visium_gbm_10x" in INGESTIBLE
     assert set(INGESTIBLE) <= set(ids)
 
 

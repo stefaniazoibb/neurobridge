@@ -24,7 +24,8 @@ Walk the graded claims in order:
 2. **S2 (confirmatory).** "It replicates in both independent CGGA cohorts. CGGA has no subtype labels, so the Validation Agent trained a subtype classifier on TCGA only, with the candidate genes removed from its features so it can't manufacture the result. Cross-validated balanced accuracy is 0.82."
 3. **C1 and S3 (the twist).** "But the score correlates 0.7 to 0.8 with mature-neuron markers. Residualise on them and the subtype difference no longer replicates. So the platform tells me this signal is largely normal brain in the sample, not proven tumour biology."
 4. **O2.** "Survival: not replicated. TCGA is null, one CGGA cohort is significant in the *opposite* direction, and the reviewer flags that as heterogeneity, not support."
-5. **SC1.** "In single cells, these genes are mostly in OPCs, neurons and astrocytes. GRIA1 is the one enriched in neoplastic cells, and VGLUT1 is absent from tumour cells, as you'd expect for a presynaptic marker."
+5. **SP1–SP3 (spatial).** "On one Visium section, presynaptic VGLUT1 sits with the neurons, but the receptor genes are spread through tumour tissue regardless of neuronal content. GAP43 and NTRK2 rise near neuron-rich tissue even after adjusting for each spot's own neuron content. VGLUT1 to glutamate receptors and BDNF to TrkB co-localise beyond what shared tissue domains explain. It's one patient, so this is a lead, and the platform labels it that way."
+6. **SC1.** "In single cells, these genes are mostly in OPCs, neurons and astrocytes. GRIA1 is the one enriched in neoplastic cells, and VGLUT1 is absent from tumour cells, as you'd expect for a presynaptic marker."
 
 > "The headline is a well-supported negative. Bulk transcript signatures are the wrong readout for neuron–glioma coupling. That is exactly the kind of decision-relevant answer you want before spending on a biomarker programme."
 
@@ -37,14 +38,16 @@ Open one agent: show its inputs, actions, outputs and limitations. Open one tool
 - **Reproducibility.** Seed, package versions, and SHA-256 for every input file.
 
 **5:00 · Biological Explorer (optional)**
-Show the single-cell UMAP coloured by GRIA2, then the ligand–receptor heatmap with neoplastic cells as receivers. Say the caveat out loud: co-expression is not interaction.
+Show the Spatial tab: domain map on the H&E image, then GRIA2 vs SNAP25 maps side by side. Then the single-cell UMAP coloured by GRIA2. Say the caveat out loud: co-localisation is not interaction.
 
 **5:30 · Evidence Report**
 Scroll the 13 sections, then download the PDF.
 > "Every sentence is tagged as association, mechanistic-from-literature, plausibility or insufficient, and links to an analysis id or a PMID."
 
 **5:50 · Architecture page and close**
-> "No agent framework: a transparent orchestrator, 16 typed tools, and a registry that exports an MCP manifest, so these skills could plug into a K-Pro-style agent tomorrow. The LLM is optional and confined to language tasks. It never produces a number. Next steps would be deconvolution against single-cell references and spatial data, which is where I'd take this question."
+> "No agent framework: a transparent orchestrator, 17 typed tools, and a registry that exports an MCP manifest, so these skills could plug into a K-Pro-style agent tomorrow. The LLM is optional and confined to language tasks. It never produces a number. Next steps would be deconvolution against single-cell references and a multi-patient spatial cohort, which is where I'd take this question."
+
+Optional extra (with Claude enabled): ask "Is NLGN3 or BDNF expression associated with overall survival in IDH-wildtype glioblastoma after adjusting for age and MGMT status?" The planner restricts to IDH-wildtype and tests each gene alone and across cohorts. Claude's review narrative then critiques the conclusions using only the computed claims.
 
 ---
 

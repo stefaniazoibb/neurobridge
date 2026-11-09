@@ -106,7 +106,7 @@ class DataAgent(Agent):
             if out is None:
                 ctx.ws.unavailable.append({"dataset_id": did, "consequence": _consequence(did)})
                 continue
-            if did != "gse84465_darmanis":
+            if did not in ("gse84465_darmanis", "visium_gbm_10x"):
                 self.call(ctx, f"inspect_{did}", "inspect_clinical_metadata", dataset_id=did)
         if "tcga_gbm_rnaseq" not in ctx.ws.cohorts:
             self.status = ToolStatus.FAILED
@@ -119,6 +119,7 @@ def _consequence(did: str) -> str:
         "cgga_325": "One fewer validation cohort; replication assessed on remaining cohorts only.",
         "cgga_693": "One fewer validation cohort; replication assessed on remaining cohorts only.",
         "gse84465_darmanis": "No single-cell localisation: cannot tell whether candidate genes are expressed by tumour cells.",
+        "visium_gbm_10x": "No spatial analysis: co-localisation with neuron-rich tissue cannot be assessed.",
     }.get(did, "Dataset-specific analyses skipped.")
 
 
@@ -150,6 +151,11 @@ class BioinformaticsAgent(Agent):
                 self.call(ctx, "single_cell", "perform_cell_type_analysis", dataset_id="gse84465_darmanis", panel_id=PRIMARY)
             else:
                 self.limitations.append("Single-cell analysis skipped: GSE84465 unavailable.")
+        if ctx.wants("spatial"):
+            if ctx.ws.single_cell.get("visium_gbm_10x:raw") is not None:
+                self.call(ctx, "spatial", "perform_spatial_analysis", dataset_id="visium_gbm_10x", panel_id=PRIMARY)
+            else:
+                self.limitations.append("Spatial analysis skipped: Visium section unavailable.")
 
 
 class StatisticsAgent(Agent):
@@ -157,10 +163,13 @@ class StatisticsAgent(Agent):
 
     def execute(self, ctx: Context) -> None:
         panel = ctx.options.get("panel", PRIMARY)
+        idh = "IDH-wildtype" in (ctx.plan.restrictions or [])
         bulk = [d for d in ("tcga_gbm_rnaseq", "cgga_325", "cgga_693") if d in ctx.ws.cohorts]
         if ctx.wants("survival"):
             for d in bulk:
-                self.call(ctx, f"survival_{d}", "perform_survival_analysis", dataset_id=d, panel_id=panel)
+                self.call(ctx, f"survival_{d}", "perform_survival_analysis", dataset_id=d, panel_id=panel, idh_wildtype_only=idh)
+                for g in ctx.plan.gene_level:
+                    self.call(ctx, f"survival_gene_{g}_{d}", "perform_survival_analysis", dataset_id=d, panel_id=f"gene_{g}", idh_wildtype_only=idh)
         if ctx.wants("composition") and bulk:
             self.call(ctx, "composition", "assess_composition_confounding", dataset_ids=bulk, panel_id=panel)
 
@@ -181,5 +190,8 @@ class ValidationAgent(Agent):
             self.call(ctx, "val_subtype", "validate_across_cohorts", hypothesis="subtype_difference", validation_ids=val, panel_id=panel)
             self.call(ctx, "val_subtype_resid", "validate_across_cohorts", hypothesis="subtype_difference", validation_ids=val, panel_id=panel, residualise_on_neuron_markers=True)
         if ctx.wants("survival"):
-            self.call(ctx, "val_survival", "validate_across_cohorts", hypothesis="survival_association", validation_ids=val, panel_id=panel)
+            idh = "IDH-wildtype" in (ctx.plan.restrictions or [])
+            self.call(ctx, "val_survival", "validate_across_cohorts", hypothesis="survival_association", validation_ids=val, panel_id=panel, idh_wildtype_only=idh)
+            for g in ctx.plan.gene_level:
+                self.call(ctx, f"val_survival_gene_{g}", "validate_across_cohorts", hypothesis="survival_association", validation_ids=val, panel_id=f"gene_{g}", idh_wildtype_only=idh)
             self.call(ctx, "sensitivity", "run_sensitivity_analysis", dataset_ids=["tcga_gbm_rnaseq"] + val, panel_id=panel)

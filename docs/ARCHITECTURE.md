@@ -10,15 +10,15 @@ flowchart TB
   subgraph AG[Agent layer · neurobridge/agents]
     ORC[Orchestrator] --> AGS[Hypothesis · Literature · Data · Bioinformatics · Statistics · Validation agents]
     AGS --> EX[ToolExecutor<br/>validate · retry · log]
-    EX --> REG[Tool registry<br/>16 typed tools · MCP manifest]
+    EX --> REG[Tool registry<br/>17 typed tools · MCP manifest]
     ORC --> CL[Claim builder] --> RV[Reviewer agent]
     PL[Planner<br/>deterministic / LLM-assisted] --> AGS
   end
   subgraph AN[Analysis layer · neurobridge/analysis]
-    SIG[signatures] & GRP[groups] & DE[differential] & ENR[enrichment] & SUR[survival] & VLD[validation] & SUB[subtyping] & SEN[sensitivity] & SC[singlecell] & LR[communication]
+    SIG[signatures] & GRP[groups] & DE[differential] & ENR[enrichment] & SUR[survival] & VLD[validation] & SUB[subtyping] & SEN[sensitivity] & SC[singlecell] & LR[communication] & SP[spatial]
   end
   subgraph DA[Data layer · neurobridge/data, literature, knowledge]
-    CAT[catalogue] & CACHE[download cache + SHA-256 manifest] & XENA[Xena] & CGGA[CGGA] & GEO[GEO] & CBP[cBioPortal] & CXG[CELLxGENE] & EPMC[Europe PMC] & GS[gene panels + Enrichr libraries]
+    CAT[catalogue] & CACHE[download cache + SHA-256 manifest] & XENA[Xena] & CGGA[CGGA] & GEO[GEO] & VIS[10x Visium] & CBP[cBioPortal] & CXG[CELLxGENE] & EPMC[Europe PMC] & GS[gene panels + Enrichr libraries]
   end
   UI --> AG --> AN --> DA
   REG --> AN

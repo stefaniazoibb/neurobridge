@@ -216,3 +216,37 @@ def scatter_figure(x: pd.Series, y: pd.Series, xlabel: str, ylabel: str, title: 
     fig.update_xaxes(title=xlabel)
     fig.update_yaxes(title=ylabel)
     return apply(fig, title, caption)
+
+
+PROGRAMME_COLORS = {"neuron-enriched": "#6250d6", "tumour_glial-enriched": "#eb6834", "myeloid-enriched": "#2a78d6", "vascular-enriched": "#1baf7a"}
+
+
+def spatial_figure(a, values, title: str, caption: str, continuous: bool = True, colorscale=None, image=None, highlight=None, cmid=None) -> go.Figure:
+    """Spots on the H&E low-resolution image. values: array (continuous) or categorical labels."""
+    sf = a.uns["spatial_meta"]["scalefactors"]["tissue_lowres_scalef"]
+    xy = a.obsm["spatial"] * sf
+    fig = go.Figure()
+    if image is not None:
+        grey = (np.asarray(image, float) @ [0.299, 0.587, 0.114]).clip(0, 255)
+        fig.add_trace(go.Image(z=np.stack([grey] * 3, axis=-1).astype(np.uint8), opacity=0.35, hoverinfo="skip"))
+    # marker size in screen pixels so that spots roughly tile the hexagonal grid in a ~560 px tall plot
+    n_rows = int(a.obs["array_row"].max() - a.obs["array_row"].min() + 1) if "array_row" in a.obs else 78
+    size = max(3.0, 0.92 * 470 / n_rows * 1.15)
+    if continuous:
+        v = np.asarray(values, float)
+        fig.add_trace(go.Scattergl(x=xy[:, 0], y=xy[:, 1], mode="markers", showlegend=False,
+                                   marker=dict(size=size, color=v, colorscale=colorscale or [[i / 6, c] for i, c in enumerate(SEQUENTIAL_BLUE)], cmid=cmid, colorbar=dict(thickness=12), opacity=0.9),
+                                   hovertemplate="%{marker.color:.2f}<extra></extra>"))
+    else:
+        lab = pd.Series(np.asarray(values).astype(str))
+        cats = sorted(lab.unique(), key=lambda c: list(PROGRAMME_COLORS).index(c) if c in PROGRAMME_COLORS else 99)
+        for i, c in enumerate(cats):
+            m = (lab == c).values
+            fig.add_trace(go.Scattergl(x=xy[m, 0], y=xy[m, 1], mode="markers", name=f"{c} ({m.sum()} spots)", marker=dict(size=size, color=PROGRAMME_COLORS.get(c, color_for(c, {}, i)), opacity=0.9), hovertemplate=f"{c}<extra></extra>"))
+    if highlight is not None:
+        h = np.asarray(highlight, bool)
+        fig.add_trace(go.Scattergl(x=xy[h, 0], y=xy[h, 1], mode="markers", name="neuron-rich spots", marker=dict(size=size, color="rgba(0,0,0,0)", line=dict(color="#1d1d1b", width=1.2))))
+    pad = size * 3
+    fig.update_xaxes(visible=False, scaleanchor="y", constrain="domain", range=[xy[:, 0].min() - pad, xy[:, 0].max() + pad])
+    fig.update_yaxes(visible=False, range=[xy[:, 1].max() + pad, xy[:, 1].min() - pad])
+    return apply(fig, title, caption, height=600)

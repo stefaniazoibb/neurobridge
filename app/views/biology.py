@@ -165,8 +165,41 @@ with tabs[5]:
         st.info("Load the single-cell dataset in the Single-cell tab first.")
 
 with tabs[6]:
-    st.markdown("**Spatial transcriptomics: not available in this version.**")
-    st.write("Candidate public GBM spatial datasets (for example Ravi et al. 2022, Cancer Cell, PMID 35700707, 10x Visium) are distributed as multi-gigabyte archives with heterogeneous formats. "
-             "No compact, documented subset with stable download links was identified during development, so NeuroBridge does not offer spatial analyses rather than showing a placeholder map.")
-    st.write("Planned: ingest one Visium section through scanpy/squidpy, score the candidate panel per spot, and test co-localisation of neuronal ligand and glioma receptor expression at the infiltrative edge.")
+    st.caption("10x Genomics Visium, Human Glioblastoma (whole transcriptome, Space Ranger 1.2.0, CC BY 4.0): one fresh-frozen section from one patient, ~55 µm spots. Every result here describes this tissue and is exploratory.")
+    if st.toggle("Load and process the Visium section", value=st.session_state.get("sp_on", False), key="sp_on"):
+        from ui.common import processed_spatial
+
+        out = safe_call(processed_spatial, what="Spatial processing")
+        if out:
+            from neurobridge.analysis import spatial as spa
+
+            a, rec, dom, nbrs, img = out
+            st.caption(f"{rec.n_used} spots after QC ({rec.n_excluded} removed). Domains: {dom.shape[0]} (Leiden, resolution {rec.parameters['leiden_resolution']}). Seed {rec.seed}.")
+            v1, v2 = st.columns([1, 1])
+            what = v1.radio("Map", ["domains", "programme", "gene"], horizontal=True)
+            if what == "domains":
+                show_fig(F.spatial_figure(a, a.obs["domain_programme"].values, "Spatial domains by dominant programme", "Leiden domains on spot expression, coloured by their most enriched programme. Proxies, not cell-type calls.", continuous=False, image=img), key="spd")
+                st.dataframe(dom.round(3), width="stretch")
+            elif what == "programme":
+                prog = v2.selectbox("Programme", [c.replace("prog_", "") for c in a.obs.columns if c.startswith("prog_")])
+                show_fig(F.spatial_figure(a, a.obs[f"prog_{prog}"].values, f"{prog} programme per spot", "scanpy score_genes: " + ", ".join(spa.PROGRAMMES[prog]), image=img), key="spp")
+            else:
+                g = v2.selectbox("Gene", sorted(a.raw.var_names), index=sorted(a.raw.var_names).index("GRIA2"))
+                x = spa._gene(a, g)
+                show_fig(F.spatial_figure(a, x, f"{g} expression per spot", f"log1p(CP10k); detected in {100 * (x > 0).mean():.0f}% of spots.", image=img), key="spg")
+            sp_genes = st.multiselect("Genes for spatial statistics", sorted(a.raw.var_names), default=[g for g in panels["neuron_glioma_extended"].genes if g in a.raw.var_names][:10], key="spgenes")
+            nperm = st.select_slider("Permutations", [199, 499, 999], value=499, key="spperm")
+            if sp_genes and st.button("Run spatial statistics", type="primary"):
+                res, rec_p = spa.spatial_programme_analysis(a, sp_genes, n_perm=nperm)
+                st.markdown("**Spot correlations with programmes and spatial autocorrelation (Moran's I)**")
+                st.dataframe(res["correlations"].round(4), hide_index=True, width="stretch")
+                itab, _, rec_i = spa.interface_analysis(a, sp_genes, nbrs)
+                st.markdown(f"**Gradient from neuron-rich tissue** ({rec_i.parameters['n_neuron_rich']} neuron-rich spots; interface = 1–2 rings, distal ≥ 5 rings)")
+                st.dataframe(itab.round(4), hide_index=True, width="stretch")
+                lr, rec_lr = spa.neighbour_lr(a, nbrs, n_perm=nperm)
+                st.markdown("**Ligand–receptor neighbour co-localisation** (global and domain-stratified permutation nulls)")
+                st.dataframe(lr.round(4), hide_index=True, width="stretch")
+                for l in dict.fromkeys(rec_p.limitations + rec_i.limitations + rec_lr.limitations):
+                    st.caption("· " + l)
+    st.caption("Next step: a multi-patient Visium cohort (Ravi et al. 2022, PMID 35700707) would turn these single-section descriptions into testable across-patient effects.")
 disclaimer()

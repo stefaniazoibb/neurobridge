@@ -183,15 +183,35 @@ def build_catalog() -> list[DatasetRecord]:
             role="listed",
         ),
         DatasetRecord(
-            dataset_id="spatial_gbm_candidates",
-            name="Spatial transcriptomics (candidates, not ingested)",
-            source="Datadryad / GEO",
+            dataset_id="visium_gbm_10x",
+            name="10x Visium Human Glioblastoma (whole transcriptome)",
+            source="10x Genomics datasets",
+            source_url="https://www.10xgenomics.com/datasets/human-glioblastoma-whole-transcriptome-analysis-1-standard-1-2-0",
+            publication=None,
+            publication_title="10x Genomics demonstration dataset (no associated publication); licence CC BY 4.0",
+            modalities=[M.SPATIAL],
+            n_samples=1, n_patients=1, n_cells=None, n_genes=36601,
+            platform="10x Visium Spatial Gene Expression v1, Space Ranger 1.2.0",
+            expression_units="UMI counts per 55 um spot",
+            clinical_variables=["none (single de-identified section)"],
+            survival_available=False,
+            access=AccessMode.PUBLIC_DIRECT, ingestion=st(_cached("spatial/visium_gbm_10x/filtered_feature_bc_matrix.h5")),
+            preprocessing=["Space Ranger filtered matrix (3,468 tissue spots)", "NeuroBridge: spot QC (>= 500 UMIs, >= 250 genes), library-size normalisation, log1p, HVG, PCA, Leiden spatial domains, programme scores"],
+            limitations=["One section from one patient: spatial results are descriptive case-level observations", "Spots (~55 um) mix several cells; no single-cell resolution", "No clinical or molecular annotation (IDH, subtype, location) is distributed", "Raw sequencing data withheld by 10x for donor anonymity; only processed outputs are available"],
+            version="10x Genomics dataset Parent_Visium_Human_Glioblastoma (Space Ranger 1.2.0)",
+            role="spatial reference",
+            files=["https://cf.10xgenomics.com/samples/spatial-exp/1.2.0/Parent_Visium_Human_Glioblastoma/Parent_Visium_Human_Glioblastoma_filtered_feature_bc_matrix.h5", "https://cf.10xgenomics.com/samples/spatial-exp/1.2.0/Parent_Visium_Human_Glioblastoma/Parent_Visium_Human_Glioblastoma_spatial.tar.gz", "https://cf.10xgenomics.com/samples/spatial-exp/1.2.0/Parent_Visium_Human_Glioblastoma/Parent_Visium_Human_Glioblastoma_metrics_summary.csv"],
+        ),
+        DatasetRecord(
+            dataset_id="ravi2022_visium",
+            name="Ravi et al. 2022 GBM spatial multi-omics (Visium, multiple patients)",
+            source="Datadryad",
             source_url="https://doi.org/10.5061/dryad.h70rxwdmj",
             publication="35700707",
             publication_title="Ravi et al. 2022, Spatially resolved multi-omics deciphers bidirectional tumor-host interdependence in glioblastoma, Cancer Cell",
             modalities=[M.SPATIAL],
             access=AccessMode.LISTED_ONLY, ingestion=IngestionStatus.NOT_INGESTED,
-            limitations=["Visium GBM datasets are multi-GB archives with heterogeneous formats; no compact, documented public subset was identified, so spatial analyses are not offered in this version"],
+            limitations=["Multi-GB archive with per-sample Space Ranger outputs; the natural next step to move spatial analyses beyond a single patient, not ingested in this version"],
             role="listed",
         ),
     ]
@@ -204,4 +224,4 @@ def get_dataset(dataset_id: str) -> DatasetRecord:
     raise KeyError(dataset_id)
 
 
-INGESTIBLE = ["tcga_gbm_rnaseq", "tcga_gbm_u133a", "cgga_325", "cgga_693", "gse84465_darmanis"]
+INGESTIBLE = ["tcga_gbm_rnaseq", "tcga_gbm_u133a", "cgga_325", "cgga_693", "gse84465_darmanis", "visium_gbm_10x"]

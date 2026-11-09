@@ -43,8 +43,11 @@ These numbers come from the reference run on the public data. The repository rep
 | Is that difference independent of normal-brain content? | **No.** The score correlates with mature-neuron markers (Spearman rho 0.67–0.81). After residualising on them the difference does not replicate (g = −0.52, −0.38, +0.07). | Insufficient |
 | Is the score associated with overall survival (adjusted Cox)? | **Not replicated.** TCGA HR/SD 1.16 (p = 0.14), CGGA-325 0.75 (p = 0.03, opposite direction), CGGA-693 0.95 (p = 0.59). I² = 72%. | Insufficient |
 | Which cells express the candidate genes? | Mostly OPCs, neurons and astrocytes. In neoplastic cells GRIA1 is enriched relative to other cells. SLC17A7 (VGLUT1) is not detected in neoplastic cells. | Association (exploratory) |
+| Where are they in intact tissue? (one Visium section) | Presynaptic SLC17A7 and GRIN2B follow neuron-rich tissue. Postsynaptic NLGN3, GRIA1 and GRIA2 are spread through tumour regions (composite score vs neuron programme rho = 0.05). GAP43 and NTRK2 rise and THBS1 falls near neuron-rich tissue, even after adjusting for each spot's neuron content. VGLUT1→GRIN2B/GRIA2, BDNF→NTRK2 and THBS1→CACNA2D1 co-localise beyond shared tissue domains; NLGN3→NRXN1 does not. | Association (exploratory, single patient) |
 
 **Bottom line.** A neuronal-activity transcriptional axis reproducibly separates Proneural from Mesenchymal glioblastoma, but in bulk tissue it is not separable from normal-brain content, and it does not robustly predict survival.
+
+The spatial section adds a nuance the bulk data cannot provide. The receptor side of the pathway sits in tumour tissue, independent of neuronal content, which is what tumour-intrinsic expression would look like. It is one patient, so it is a lead, not a finding.
 
 That is a useful negative result. It tells a drug-discovery team that bulk transcript signatures are the wrong readout for neuron–glioma coupling. Deconvolution, spatial or functional readouts are needed. The platform reaches that conclusion by itself and states the evidence ceiling of the design: *statistical association*, never mechanism or causation.
 
@@ -54,7 +57,7 @@ That is a useful negative result. It tells a drug-discovery team that bulk trans
 |---|---|
 | **A · Research Copilot** | Question in, evidence out. Shows live progress through each agent and every tool call. You can inspect the plan, the agents' inputs, actions, outputs and limitations, the execution log, the figures, the literature and the reviewer's audit. |
 | **B · Dataset Explorer** | Catalogue of public GBM resources with identifier, source, publication, n, modalities, clinical variables, preprocessing, ingestion status and known limitations. It also queries cBioPortal and CELLxGENE live. |
-| **C · Biological Explorer** | Interactive gene and pathway analyses. Covers expression by subgroup, subtype comparisons, correlation matrices, volcano plots, ORA and GSEA, single-cell UMAP and dot plots, neoplastic-vs-other tests, and ligand–receptor co-expression. |
+| **C · Biological Explorer** | Interactive gene and pathway analyses. Covers expression by subgroup, subtype comparisons, correlation matrices, volcano plots, ORA and GSEA, single-cell UMAP and dot plots, neoplastic-vs-other tests, ligand–receptor co-expression, and spatial maps on the H&E image with domain, gradient and co-localisation statistics. |
 | **D · Validation Lab** | KM and Cox models with confounder selection and Schoenfeld PH tests, cross-cohort replication with a stated rule, sensitivity analyses, missing-data and power audit, and a reproducibility panel. |
 | **E · Evidence Report** | A 13-section report with evidence tags, figures, tables and verified references. Exports to Markdown and PDF. |
 
@@ -72,12 +75,13 @@ flowchart LR
 ```
 
 - **Transparent orchestration, no agent framework.** The orchestrator runs agents in dependency order. Each agent decides which tools to call from the plan and from what earlier agents produced, and adapts when inputs are missing.
-- **Typed tools.** There are 16 tools, each with a pydantic input schema. The registry exports a manifest in the [Model Context Protocol](https://modelcontextprotocol.io) tool shape, so the same skills can be served over MCP or handed to an LLM tool-use loop.
+- **Typed tools.** There are 17 tools, each with a pydantic input schema. The registry exports a manifest in the [Model Context Protocol](https://modelcontextprotocol.io) tool shape, so the same skills can be served over MCP or handed to an LLM tool-use loop.
 - **Executor.** It validates inputs, retries transient failures (network, downloads), records every call with timing and status, and never raises into the agent. A failed dataset is reported with its consequence and is never replaced by simulated data.
 - **Typed results with provenance.** Every analysis returns an `AnalysisRecord` holding the method, parameters, seed, software versions, timestamps, n used and excluded, limitations and warnings.
 - **Claims from templates.** Claims are generated from executed results with fixed templates, so every number in the report was computed. Each claim has an evidence level (plausibility, association, mechanistic or causal, insufficient) and a type (exploratory, confirmatory, sensitivity, literature or interpretation).
 - **Rule-based reviewer.** It flags causal verbs in observational claims, literature claims without verified citations, single-cohort "validation", composition confounding, PH violations, pseudoreplication and failed tools.
-- **Optional LLM.** Set `NEUROBRIDGE_LLM_PROVIDER=anthropic` to use Claude for question decomposition and a reviewer narrative. Outputs are schema-validated with structured outputs, intersected with allowed values, and never used for numbers. Without a key, everything runs deterministically.
+- **Optional LLM.** Set `NEUROBRIDGE_LLM_PROVIDER=anthropic` and `ANTHROPIC_API_KEY` in `.env` to use Claude (Opus 5.5) for question decomposition and a reviewer narrative. Outputs are schema-validated with structured outputs, intersected with allowed values, and never used for numbers. Without a key, everything runs deterministically. Both paths are tested.
+- **Question-aware analysis.** Genes named in the question are analysed as their own panel and individually. Population restrictions such as "IDH-wildtype" are applied to survival and validation analyses.
 
 See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 
@@ -91,6 +95,7 @@ All data are public. No synthetic patient data are used in the app. Unit tests u
 | CGGA mRNAseq_325, GBM subset | bulk RNA-seq, IDH, MGMT, survival | 139 (85 primary) | validation |
 | CGGA mRNAseq_693, GBM subset | bulk RNA-seq, IDH, MGMT, survival | 249 (140 primary) | validation |
 | GEO GSE84465 (Darmanis et al. 2017) | Smart-seq2 scRNA-seq, 4 patients, core vs periphery | 3,589 cells | cell-type reference |
+| 10x Visium Human Glioblastoma (10x Genomics, CC BY 4.0) | spatial transcriptomics, 1 section, 1 patient | 3,468 spots | spatial reference |
 | TCGA-GBM U133A array (Xena) | expression array, survival | 539 | platform check only (same patients as TCGA RNA-seq, never used as validation) |
 | cBioPortal, CELLxGENE | live listings via public APIs | — | discovery of further datasets |
 | Europe PMC | literature | — | verified citations |
@@ -98,7 +103,7 @@ All data are public. No synthetic patient data are used in the app. Unit tests u
 Every downloaded file is recorded in a manifest with its URL, SHA-256, size and timestamp. Details, exact URLs and caveats are in [docs/DATA_SOURCES.md](docs/DATA_SOURCES.md).
 
 **Not implemented, and why.**
-- **Spatial transcriptomics.** The public GBM Visium data are multi-GB archives without a compact documented subset. The app says so instead of showing a placeholder.
+- **Multi-patient spatial data.** The Ravi et al. 2022 Visium cohort is a multi-GB archive. Spatial results therefore come from one section and are descriptive.
 - **Neftel 2019 and the large CELLxGENE atlases.** These are 1–7 GB and are listed with live metadata but not ingested.
 - **Gravendeel GSE16011.** Survival data is not deposited in GEO.
 
@@ -115,6 +120,7 @@ Every downloaded file is recorded in a manifest with its URL, SHA-256, size and 
 | Validation rule | replicated = same direction as discovery and p < 0.05 in an *independent* cohort; DerSimonian–Laird pooling with I² is descriptive only |
 | Composition control | mature-neuron marker score as covariate and for residualisation |
 | Single cell | Scanpy QC, normalisation, HVG, PCA, UMAP, Leiden; Wilcoxon with BH; permutation-based ligand–receptor scores |
+| Spatial | spot QC and Leiden domains; programme scores; Moran's I on the hexagonal grid; gradient with ring distance from neuron-rich spots, partialled on each spot's neuron score; ligand–receptor neighbour co-localisation against a domain-stratified permutation null |
 
 Full rationale, assumptions and the exploratory/confirmatory separation are in [docs/METHODOLOGY.md](docs/METHODOLOGY.md).
 
@@ -131,20 +137,20 @@ git clone <this repo> && cd neurobridge
 conda create -n neurobridge python=3.11 -y && conda activate neurobridge
 pip install -e ".[llm,dev]"
 cp .env.example .env            # optional: set NEUROBRIDGE_LLM_PROVIDER=anthropic
-python scripts/fetch_data.py    # ~140 MB of public data, cached under data/cache/
+python scripts/fetch_data.py    # ~170 MB of public data, cached under data/cache/
 streamlit run app/streamlit_app.py
 ```
 
 Command-line demo: `python scripts/run_demo.py`. It prints agent progress and writes the report as Markdown and PDF.
-Tests: `pytest`. That runs 34 tests: unit, data-validation on the real files, and offline end-to-end integration. Use `pytest -m "not slow"` to skip the full investigation.
+Tests: `pytest`. That runs 39 tests: unit, data-validation on the real files, and offline end-to-end integration. Use `pytest -m "not slow"` to skip the full investigation.
 
 ## Repository layout
 
 ```
 neurobridge/
   agents/        orchestrator, agents, planner, claim builder, reviewer, executor, tool registry, LLM adapter
-  analysis/      signatures, groups, differential, enrichment, survival, validation, subtyping, sensitivity, singlecell, communication
-  data/          catalogue, download cache + manifest, Xena / CGGA / GEO / cBioPortal / CELLxGENE clients, harmonised Cohort
+  analysis/      signatures, groups, differential, enrichment, survival, validation, subtyping, sensitivity, singlecell, communication, spatial
+  data/          catalogue, download cache + manifest, Xena / CGGA / GEO / 10x Visium / cBioPortal / CELLxGENE clients, harmonised Cohort
   knowledge/     candidate gene panels with rationale, Enrichr gene-set libraries
   literature/    Europe PMC client, curated key references (PMIDs only)
   report/        Markdown builder, PDF export
@@ -160,14 +166,14 @@ scripts/         fetch_data.py, run_demo.py
 - **Bulk confounding.** Neuronal transcripts in bulk tissue mix tumour-intrinsic programmes with infiltrated normal brain. NeuroBridge measures this but cannot fully remove it.
 - **Projected subtypes.** CGGA subtypes come from a classifier and carry its error.
 - **Different adjustment sets.** Covariates differ across cohorts: G-CIMP in TCGA, IDH and MGMT in CGGA. Extent of resection and performance status are unavailable everywhere.
-- **Small single-cell reference.** It has four patients and 21 neurons, and single-cell tests treat cells as replicates.
+- **Small single-cell and spatial references.** The single-cell data have four patients and 21 neurons, and tests treat cells as replicates. The spatial data are one section from one patient, at 55 µm spot resolution.
 - **Ceiling of the design.** No perturbation, spatial or longitudinal data means no mechanistic or causal claims.
 - **Simple planner.** The deterministic planner uses keywords. The LLM planner is optional and constrained to the available workflows.
 
 ## Future developments
 
 - Bulk deconvolution against a GBM single-cell reference, to separate malignant OPC/NPC-like signal from normal neurons.
-- Spatial transcriptomics ingestion (Visium/Xenium) and ligand–receptor co-localisation at the infiltrative edge.
+- Multi-patient spatial cohorts (Ravi et al. 2022) and single-cell-resolution spatial data (Xenium/MERFISH), to test the spatial observations across patients.
 - Larger single-cell atlases (CELLxGENE Census streaming) with patient-level pseudobulk tests.
 - An MCP server exposing the tool registry, and LLM-driven tool selection over the same typed tools.
 - Additional cohorts (CPTAC-GBM proteomics, GLASS longitudinal) and drug–target links (ChEMBL, Open Targets) for candidate genes.
