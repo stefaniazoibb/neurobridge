@@ -4,7 +4,7 @@ Two public addresses, both free and both served from this GitHub repository.
 
 | What | Where | Host |
 |---|---|---|
-| Research platform (Streamlit app) | https://neurobridge.streamlit.app | Streamlit Community Cloud |
+| Research platform (Streamlit app) | https://stefaniazoibb-neurobridge.streamlit.app | Streamlit Community Cloud |
 | Website (scroll journey) | https://stefaniazoibb.github.io/neurobridge/ | GitHub Pages |
 
 ## Research platform: Streamlit Community Cloud
@@ -15,7 +15,7 @@ Two public addresses, both free and both served from this GitHub repository.
    - **Repository:** `stefaniazoibb/neurobridge`
    - **Branch:** `main`
    - **Main file path:** `app/streamlit_app.py`
-   - **App URL:** `neurobridge`. The website and README link to `neurobridge.streamlit.app`. If you pick another name, update those links.
+   - **App URL:** the deployed address is `stefaniazoibb-neurobridge.streamlit.app`. If you later set a custom subdomain in the app's settings, update the links in `README.md` and `site/story.src.html`.
 4. Under **Advanced settings**, set **Python version** to `3.11`. Leave the secrets empty (see below).
 5. Choose **Deploy**.
 
@@ -36,4 +36,4 @@ Installation from `requirements.txt` takes a few minutes. After that the app red
 
 ## Repository "About" box
 
-In the repository's About settings (the gear icon), set **Website** to `https://neurobridge.streamlit.app`. The link then appears on the repository page.
+In the repository's About settings (the gear icon), set **Website** to `https://stefaniazoibb-neurobridge.streamlit.app`. The link then appears on the repository page.

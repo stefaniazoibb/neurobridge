@@ -2,7 +2,7 @@
 
 **From biological hypotheses to clinically relevant evidence.**
 
-**[Open the live platform](https://neurobridge.streamlit.app)** · **[Website](https://stefaniazoibb.github.io/neurobridge/)** · [Deployment notes](docs/DEPLOY.md)
+**[Open the live platform](https://stefaniazoibb-neurobridge.streamlit.app)** · **[Website](https://stefaniazoibb.github.io/neurobridge/)** · [Deployment notes](docs/DEPLOY.md)
 
 ![NeuroBridge website: a living glioblastoma cell beside the headline "Biology is complex. Discovery shouldn't be."](docs/images/site_hero.jpg)
 

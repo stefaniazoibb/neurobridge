@@ -201,7 +201,7 @@ footer b { display: block; color: var(--ivory); font-weight: 600; margin-bottom:
     <nav class="nav" aria-label="Sections">
       <a href="#science">Science</a><a href="#data">Data</a><a href="#intelligence">Intelligence</a><a href="#validation">Validation</a><a href="#platform">Platform</a><a href="#research">Research</a>
     </nav>
-    <a class="btn" href="https://neurobridge.streamlit.app">Launch the platform</a>
+    <a class="btn" href="https://stefaniazoibb-neurobridge.streamlit.app">Launch the platform</a>
   </div>
 </header>
 
@@ -352,7 +352,7 @@ footer b { display: block; color: var(--ivory); font-weight: 600; margin-bottom:
         <button role="tab" aria-selected="false" aria-controls="shotImg" data-i="3"><b>Evidence Report</b><span>Markdown and PDF, every claim tagged</span></button>
       </div>
       <figure class="shot" style="margin:0">
-        <div class="bar"><i></i><i></i><i></i><span id="shotUrl">neurobridge.streamlit.app/copilot</span></div>
+        <div class="bar"><i></i><i></i><i></i><span id="shotUrl">stefaniazoibb-neurobridge.streamlit.app/copilot</span></div>
         <img id="shotImg" src="assets/app_copilot.jpg" width="1200" height="750" loading="lazy" decoding="async" alt="Research Copilot showing graded claims from a live investigation">
       </figure>
     </div>
@@ -378,7 +378,7 @@ footer b { display: block; color: var(--ivory); font-weight: 600; margin-bottom:
     <p class="mono" style="color:var(--ivory-3);margin-bottom:22px">NeuroBridge</p>
     <h2 class="serif">Explore the biology. Follow the evidence.</h2>
     <div class="ctas">
-      <a class="btn" href="https://neurobridge.streamlit.app">Launch the platform</a>
+      <a class="btn" href="https://stefaniazoibb-neurobridge.streamlit.app">Launch the platform</a>
       <a class="btn ghost" href="https://github.com/stefaniazoibb/neurobridge">View the code on GitHub</a>
     </div>
     <div class="cmd"><code id="cmd">git clone https://github.com/stefaniazoibb/neurobridge && cd neurobridge && pip install -e ".[llm]" && streamlit run app/streamlit_app.py</code><button id="copy" type="button">Copy</button></div>
@@ -941,7 +941,7 @@ const minus = v => String(v).replace("-", "−");
 
 /* platform tabs */
 (() => {
-  const SH = [["app_copilot.jpg", "neurobridge.streamlit.app/copilot", "Research Copilot showing graded claims from a live investigation"], ["app_validation.jpg", "neurobridge.streamlit.app/validation", "Validation Lab with cross-cohort replication of the subtype difference"], ["app_spatial.jpg", "neurobridge.streamlit.app/biology", "Biological Explorer showing GRIA2 expression on the Visium section"], ["app_report.jpg", "neurobridge.streamlit.app/report", "Evidence Report with executive summary and key figures"]];
+  const SH = [["app_copilot.jpg", "stefaniazoibb-neurobridge.streamlit.app/copilot", "Research Copilot showing graded claims from a live investigation"], ["app_validation.jpg", "stefaniazoibb-neurobridge.streamlit.app/validation", "Validation Lab with cross-cohort replication of the subtype difference"], ["app_spatial.jpg", "stefaniazoibb-neurobridge.streamlit.app/biology", "Biological Explorer showing GRIA2 expression on the Visium section"], ["app_report.jpg", "stefaniazoibb-neurobridge.streamlit.app/report", "Evidence Report with executive summary and key figures"]];
   const tabs = [...document.querySelectorAll("#ptabs button")], img = $("#shotImg");
   const sel = i => { tabs.forEach((t, k) => { t.setAttribute("aria-selected", String(k === i)); t.tabIndex = k === i ? 0 : -1; }); img.src = "assets/" + SH[i][0]; img.alt = SH[i][2]; $("#shotUrl").textContent = SH[i][1]; };
   tabs.forEach((t, i) => { t.addEventListener("click", () => sel(i)); t.addEventListener("keydown", e => { if (e.key === "ArrowDown" || e.key === "ArrowRight") { e.preventDefault(); sel((i + 1) % tabs.length); tabs[(i + 1) % tabs.length].focus(); } if (e.key === "ArrowUp" || e.key === "ArrowLeft") { e.preventDefault(); sel((i + 3) % tabs.length); tabs[(i + 3) % tabs.length].focus(); } }); });
