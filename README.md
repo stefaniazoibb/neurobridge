@@ -2,6 +2,12 @@
 
 **From biological hypotheses to clinically relevant evidence.**
 
+![NeuroBridge website: a living glioblastoma cell beside the headline "Biology is complex. Discovery shouldn't be."](docs/images/site_hero.jpg)
+
+![Three scenes from the scroll journey: the brain with the tumour site, neuron-to-tumour signalling, and the evidence graph](docs/images/site_journey.jpg)
+
+*The NeuroBridge website (`site/`): a scroll-driven WebGL journey from the brain to a glioblastoma cell to the evidence.*
+
 NeuroBridge is an agentic research platform for multimodal biomedical discovery. It is built around one question in glioblastoma:
 
 > Can neuronal activity-related molecular signatures identify distinct glioblastoma subgroups, reveal neuron–tumour interactions and explain differences in patient outcomes?
