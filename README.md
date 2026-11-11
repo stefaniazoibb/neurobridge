@@ -4,6 +4,8 @@
 
 **[Open the live platform](https://stefaniazoibb-neurobridge.streamlit.app)** · **[Website](https://stefaniazoibb.github.io/neurobridge/)** · [Deployment notes](docs/DEPLOY.md)
 
+The live app runs on Streamlit Community Cloud's free tier, so it falls asleep after about 12 hours without visitors. If you see a wake-up button, click it and give it a minute or two. The first investigation after that is slower, because the app downloads the public data again.
+
 ![NeuroBridge website: a living glioblastoma cell beside the headline "Biology is complex. Discovery shouldn't be."](docs/images/site_hero.jpg)
 
 ![Three scenes from the scroll journey: the brain with the tumour site, neuron-to-tumour signalling, and the evidence graph](docs/images/site_journey.jpg)
