@@ -2,23 +2,7 @@
 
 import pytest
 
-from neurobridge import config
 from tests.conftest import requires_cgga, requires_sc, requires_tcga
-
-
-@pytest.fixture
-def offline(monkeypatch, tmp_path):
-    s = config.Settings(allow_network=False, runs_dir=tmp_path / "runs")
-    s.ensure_dirs()
-    import neurobridge.config as cfg
-
-    cfg.get_settings.cache_clear()
-    monkeypatch.setattr(cfg, "get_settings", lambda: s)
-    for mod in ["neurobridge.data.cache", "neurobridge.literature.europepmc", "neurobridge.agents.orchestrator", "neurobridge.knowledge.genesets", "neurobridge.data.catalog", "neurobridge.analysis.common", "neurobridge.data.cbioportal", "neurobridge.data.cellxgene", "neurobridge.agents.llm"]:
-        m = __import__(mod, fromlist=["x"])
-        if hasattr(m, "get_settings"):
-            monkeypatch.setattr(m, "get_settings", lambda: s)
-    return s
 
 
 @requires_tcga

@@ -19,7 +19,19 @@ class Workspace:
     citations: dict[str, Any] = field(default_factory=dict)  # pmid -> Citation
     unavailable: list[dict] = field(default_factory=list)
     claims: list[dict] = field(default_factory=list)
+    panels: dict[str, Any] = field(default_factory=dict)  # investigation-specific GenePanels (e.g. genes named in the question)
     _counter: int = 0
+
+    def panel(self, panel_id: str):
+        """Resolve a gene panel: this investigation's own panels first, then the built-in and library panels."""
+        if panel_id in self.panels:
+            return self.panels[panel_id]
+        from neurobridge.knowledge.genesets import all_panels
+
+        panels = all_panels()
+        if panel_id not in panels:
+            raise KeyError(f"unknown gene panel {panel_id!r}; available: {sorted(set(panels) | set(self.panels))}")
+        return panels[panel_id]
 
     def put(self, kind: str, obj: Any) -> str:
         self._counter += 1

@@ -7,7 +7,7 @@ import re
 from pydantic import BaseModel, Field
 
 from neurobridge.agents import llm
-from neurobridge.knowledge.genesets import CANDIDATE_PANEL, EXTENDED_PANEL, PANELS, register_custom_panel
+from neurobridge.knowledge.genesets import CANDIDATE_PANEL, EXTENDED_PANEL, PANELS
 from neurobridge.schemas.agents import ResearchPlan
 
 WORKFLOWS = {
@@ -75,14 +75,15 @@ def deterministic_plan(question: str, workflows_override: list[str] | None = Non
     notes = []
     candidate = list(CANDIDATE_PANEL.genes)
     gene_level: list[str] = []
+    custom_panels: dict[str, list[str]] = {}
     if valid and set(valid) != set(candidate):
-        register_custom_panel(valid)
+        custom_panels["user_genes"] = list(dict.fromkeys(valid))
         panel_ids.insert(0, "user_genes")
         notes.append(f"Genes named in the question are analysed as their own panel ('user_genes'): {', '.join(valid)}")
         if len(valid) <= 4:
             gene_level = list(dict.fromkeys(valid))
             for g in gene_level:
-                register_custom_panel([g], panel_id=f"gene_{g}", name=f"{g} (single gene)")
+                custom_panels[f"gene_{g}"] = [g]
             notes.append(f"Each named gene is also tested individually: {', '.join(gene_level)}")
     restrictions = []
     if re.search(r"idh[\s-]*(wild[\s-]*type|wt)\b", q):
@@ -135,6 +136,7 @@ def deterministic_plan(question: str, workflows_override: list[str] | None = Non
         notes=notes,
         restrictions=restrictions,
         gene_level=gene_level,
+        custom_panels=custom_panels,
     )
 
 
