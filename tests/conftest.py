@@ -54,3 +54,20 @@ def make_synthetic_cohort(n=200, beta=0.5, seed=0, dataset_id="synthetic_test", 
 @pytest.fixture
 def synth():
     return make_synthetic_cohort()
+
+
+@pytest.fixture
+def offline(monkeypatch, tmp_path):
+    """Settings with the network disabled and runs in tmp_path, patched into every module that imported
+    `get_settings` by name (patching `config.get_settings` alone does not reach them)."""
+    from neurobridge import config
+
+    s = config.Settings(allow_network=False, runs_dir=tmp_path / "runs")
+    s.ensure_dirs()
+    config.get_settings.cache_clear()
+    monkeypatch.setattr(config, "get_settings", lambda: s)
+    for mod in ["neurobridge.data.cache", "neurobridge.literature.europepmc", "neurobridge.agents.orchestrator", "neurobridge.knowledge.genesets", "neurobridge.data.catalog", "neurobridge.analysis.common", "neurobridge.data.cbioportal", "neurobridge.data.cellxgene", "neurobridge.agents.llm"]:
+        m = __import__(mod, fromlist=["x"])
+        if hasattr(m, "get_settings"):
+            monkeypatch.setattr(m, "get_settings", lambda: s)
+    return s

@@ -74,6 +74,7 @@ class ResearchPlan(BaseModel):
     evidence_ceiling: str = Field(description="Highest evidence level this design can reach")
     restrictions: list[str] = Field(default_factory=list, description="Population restrictions requested in the question, e.g. IDH-wildtype")
     gene_level: list[str] = Field(default_factory=list, description="Genes named in the question that are analysed individually")
+    custom_panels: dict[str, list[str]] = Field(default_factory=dict, description="Investigation-specific gene panels (panel id -> genes), e.g. genes named in the question; resolved through the investigation's Workspace, never registered globally")
     planner: str = Field("deterministic", description="deterministic or LLM-assisted")
     notes: list[str] = Field(default_factory=list)
 

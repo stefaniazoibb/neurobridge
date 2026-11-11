@@ -8,8 +8,10 @@ as such: they are *candidate investigation targets*, not validated biomarkers. P
 from __future__ import annotations
 
 import json
+from collections.abc import Mapping
 from dataclasses import dataclass, field
 from pathlib import Path
+from types import MappingProxyType
 
 from neurobridge.config import get_settings
 from neurobridge.logging_utils import get_logger, log_event
@@ -101,7 +103,9 @@ NEURON_CONTROL_PANEL = GenePanel(
     role="control",
 )
 
-PANELS: dict[str, GenePanel] = {p.panel_id: p for p in (CANDIDATE_PANEL, EXTENDED_PANEL, NEURON_CONTROL_PANEL)}
+# Read-only view: the app serves every user from one process, so run-time writes here would leak between
+# investigations. Investigation-specific panels belong in Workspace.panels; `PANELS[x] = ...` raises TypeError.
+PANELS: Mapping[str, GenePanel] = MappingProxyType({p.panel_id: p for p in (CANDIDATE_PANEL, EXTENDED_PANEL, NEURON_CONTROL_PANEL)})
 
 # Public gene-set libraries available through Enrichr (fetched live, cached as JSON with timestamp).
 LIBRARIES = {
@@ -177,8 +181,31 @@ def all_panels(include_pathways: bool = True) -> dict[str, GenePanel]:
     return out
 
 
+def make_custom_panel(genes: list[str], panel_id: str = "user_genes", name: str = "User-specified genes") -> GenePanel:
+    """Build a panel from genes named in the research question (validated against the expression matrix later).
+
+    Pure function: the panel is returned, never stored at module level. Each investigation keeps its own
+    custom panels in its Workspace, so concurrent investigations in one process cannot see each other's genes.
+    """
+    return GenePanel(panel_id=panel_id, name=name, genes=list(dict.fromkeys(g.upper() for g in genes)), origin="user-specified", description="Genes extracted from the research question.")
+
+
 def register_custom_panel(genes: list[str], panel_id: str = "user_genes", name: str = "User-specified genes") -> GenePanel:
-    """Add a panel built from genes named in the research question (validated against the expression matrix later)."""
-    p = GenePanel(panel_id=panel_id, name=name, genes=list(dict.fromkeys(g.upper() for g in genes)), origin="user-specified", description="Genes extracted from the research question.")
-    PANELS[panel_id] = p
-    return p
+    """Deprecated alias of `make_custom_panel`.
+
+    It used to write the panel into the module-level PANELS dict, which leaked one investigation's genes into
+    every other investigation served by the same process. It no longer mutates PANELS.
+    """
+    import warnings
+
+    warnings.warn("register_custom_panel no longer registers globally; use make_custom_panel and Workspace.panels", DeprecationWarning, stacklevel=2)
+    return make_custom_panel(genes, panel_id, name)
+
+
+def custom_panels_from_plan(custom: dict[str, list[str]]) -> dict[str, GenePanel]:
+    """Rebuild the investigation-specific panels recorded in a ResearchPlan (`plan.custom_panels`)."""
+    out = {}
+    for pid, genes in custom.items():
+        name = "User-specified genes" if pid == "user_genes" else f"{pid.removeprefix('gene_')} (single gene)"
+        out[pid] = make_custom_panel(genes, panel_id=pid, name=name)
+    return out

@@ -56,6 +56,20 @@ class Cohort:
             notes=list(self.notes),
         )
 
+    def copy(self) -> Cohort:
+        """Investigation-private copy. Clinical data, provenance and notes are copied (investigations add columns
+        such as scores and projected subtypes). The expression matrix is shared, not copied, to keep memory
+        bounded with several concurrent users: NeuroBridge treats it as read-only, and
+        tests/test_isolation.py checks that a run leaves the cached object unchanged."""
+        return Cohort(
+            dataset=self.dataset,
+            expression=self.expression,
+            clinical=self.clinical.copy(deep=True),
+            expression_scale=self.expression_scale,
+            provenance=dict(self.provenance),
+            notes=list(self.notes),
+        )
+
     def primary_tumours(self) -> "Cohort":
         mask = self.clinical["sample_type"].eq("Primary")
         return self.subset(self.clinical.index[mask])

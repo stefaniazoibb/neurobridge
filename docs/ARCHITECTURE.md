@@ -48,6 +48,15 @@ The UI calls the agent layer for investigations and the analysis layer directly 
 
 Partial failure is first-class. Integration tests break a cohort loader on purpose. The run then completes with status `completed with failures` and lists the dataset under `datasets_unavailable`. No simulated substitute is used.
 
+## State isolation between investigations
+
+The Streamlit app serves every visitor from one Python process, so module-level objects and in-process caches are shared by all simultaneous users. Rules:
+
+- **Gene panels.** Built-in panels live in `knowledge.genesets.PANELS`, a read-only mapping (`MappingProxyType`), so a run-time write raises `TypeError`. Genes named in a question become investigation-specific panels (`user_genes`, `gene_<SYMBOL>`), recorded in `ResearchPlan.custom_panels` and held in `Workspace.panels`. Tools resolve panels through `Workspace.panel(panel_id)`, which looks in the investigation's own panels first, then in the built-in ones. `make_custom_panel` is a pure function. `register_custom_panel` is a deprecated alias that no longer writes to `PANELS`.
+- **Cohorts.** `data.loaders.load_cohort` is `lru_cache`d and shared by every investigation and by the app views. `load_expression_data` stores `Cohort.copy()` in the workspace. The clinical table is copied, because investigations add score and `subtype_projected` columns to it. The expression matrix is shared and treated as read-only.
+- **Single-cell / spatial.** The cached raw `AnnData` is never modified. Preprocessing works on a copy.
+- **Regression tests.** `tests/test_isolation.py` checks that planning leaves `PANELS` alone and that `PANELS` rejects writes, interleaved planning, eight threaded "users" held at a barrier, that the cached cohort is unchanged after a run, and two concurrent investigations on the real cohorts (marked `slow`, with the network turned off by the shared `offline` fixture).
+
 ## Tool contract
 
 ```python

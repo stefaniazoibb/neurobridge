@@ -77,7 +77,10 @@ class HypothesisAgent(Agent):
         from neurobridge.agents.planner import make_plan
 
         plan, queries = make_plan(ctx.question, use_llm=ctx.options.get("use_llm", True), workflows_override=ctx.options.get("workflows"))
+        from neurobridge.knowledge.genesets import custom_panels_from_plan
+
         ctx.plan = plan
+        ctx.ws.panels.update(custom_panels_from_plan(plan.custom_panels))  # per-investigation, never global
         ctx.options["literature_queries"] = queries
         self.actions.append(f"planner={plan.planner}")
         self.outputs = {"sub_questions": plan.sub_questions, "hypotheses": [h["hypothesis"] for h in plan.hypotheses], "workflows": plan.requested_workflows, "candidate_genes": plan.candidate_genes, "evidence_ceiling": plan.evidence_ceiling}

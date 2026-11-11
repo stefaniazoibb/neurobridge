@@ -30,11 +30,9 @@ from neurobridge.viz import figures as F
 SUBTYPE_ORDER = ["Proneural", "Neural", "Classical", "Mesenchymal"]
 
 
-def _panel(panel_id: str):
-    panels = all_panels()
-    if panel_id not in panels:
-        raise KeyError(f"unknown gene panel {panel_id!r}; available: {sorted(panels)}")
-    return panels[panel_id]
+def _panel(ws: Workspace, panel_id: str):
+    """Investigation-specific panels (ws.panels) take precedence over the built-in ones."""
+    return ws.panel(panel_id)
 
 
 def _cohort(ws: Workspace, dataset_id: str):
@@ -148,7 +146,9 @@ def load_expression_data(ws: Workspace, inp: LoadInput) -> ToolOutput:
         a = load_single_cell(inp.dataset_id)
         ws.single_cell[inp.dataset_id + ":raw"] = a
         return ToolOutput(summary=f"{a.n_obs} cells x {a.n_vars} genes; {a.obs['patient'].nunique()} patients; author cell types: {a.obs['cell_type_author'].value_counts().to_dict()}", limitations=list(a.uns.get("notes", [])) + rec.limitations, data={"n_cells": int(a.n_obs), "n_genes": int(a.n_vars)})
-    c = load_cohort(inp.dataset_id)
+    # load_cohort is cached per process and shared by every investigation and app view: work on a private copy
+    # so that columns added during this investigation (scores, projected subtypes) never leak into others.
+    c = load_cohort(inp.dataset_id).copy()
     ws.cohorts[inp.dataset_id] = c
     s = c.summary()
     return ToolOutput(summary=f"{s['n_samples']} samples ({s['n_primary']} primary) x {s['n_genes']} genes; {s['n_with_survival']} with survival ({s['n_events']} deaths)", limitations=c.notes + rec.limitations, data=s)
@@ -194,7 +194,7 @@ class ScoreInput(BaseModel):
 @register("score_signature", "Score a gene panel per sample (mean within-cohort z-score of log2 expression) in primary tumours.", ScoreInput, "bioinformatics")
 def score_signature_tool(ws: Workspace, inp: ScoreInput) -> ToolOutput:
     c = _cohort(ws, inp.dataset_id).primary_tumours()
-    p = _panel(inp.panel_id)
+    p = _panel(ws, inp.panel_id)
     res = score_signature(c, p.genes, inp.panel_id, method=inp.method)
     ref = ws.put("signature", res)
     ws.cohorts[inp.dataset_id].clinical.loc[list(res.scores), f"score__{inp.panel_id}"] = pd.Series(res.scores)
@@ -212,7 +212,7 @@ class GroupInput(BaseModel):
 def compare_molecular_groups(ws: Workspace, inp: GroupInput) -> ToolOutput:
     cohort = _cohort(ws, inp.dataset_id)
     c = cohort.primary_tumours()
-    p = _panel(inp.panel_id)
+    p = _panel(ws, inp.panel_id)
     s = pd.Series(score_signature(c, p.genes, inp.panel_id).scores)
     if inp.grouping == "subtype":
         labs, source = _subtype_labels(c)
@@ -246,7 +246,7 @@ class DEInput(BaseModel):
 @register("perform_differential_expression", "Genome-wide differential expression between high- and low-score primary tumours (Welch t / Mann-Whitney, BH FDR, Hedges' g with CI).", DEInput, "bioinformatics")
 def perform_differential_expression(ws: Workspace, inp: DEInput) -> ToolOutput:
     c = _cohort(ws, inp.dataset_id).primary_tumours()
-    p = _panel(inp.panel_id)
+    p = _panel(ws, inp.panel_id)
     s = pd.Series(score_signature(c, p.genes, inp.panel_id).scores)
     labs = dichotomise(s, inp.split)
     de = differential_expression(c, labs, "high", "low", test=inp.test)
@@ -299,7 +299,7 @@ class CorrInput(BaseModel):
 @register("compute_gene_correlation", "Gene-gene correlation matrix of a panel in primary tumours, BH-adjusted.", CorrInput, "bioinformatics")
 def compute_gene_correlation(ws: Workspace, inp: CorrInput) -> ToolOutput:
     c = _cohort(ws, inp.dataset_id).primary_tumours()
-    p = _panel(inp.panel_id)
+    p = _panel(ws, inp.panel_id)
     cr = gene_correlation(c, p.genes, inp.method)
     ref = ws.put("correlation", cr)
     fid = ws.put_figure(f"correlation_{inp.panel_id}_{inp.dataset_id}", F.correlation_figure(cr))
@@ -326,7 +326,7 @@ def perform_survival_analysis(ws: Workspace, inp: SurvivalInput) -> ToolOutput:
     if inp.idh_wildtype_only:
         m, restr = _idh_wt_mask(c)
         c = c.subset(c.clinical.index[m.fillna(False).astype(bool)])
-    p = _panel(inp.panel_id)
+    p = _panel(ws, inp.panel_id)
     s = pd.Series(score_signature(c, p.genes, inp.panel_id).scores)
     km = kaplan_meier(c.clinical, dichotomise(s, inp.split), f"{inp.panel_id} score ({inp.split} split)", inp.dataset_id)
     cov = [v for v in inp.covariates if v in c.clinical and c.clinical[v].notna().mean() >= 0.5 and not (inp.idh_wildtype_only and v in ("idh_status", "g_cimp"))]
@@ -359,7 +359,7 @@ class CompositionInput(BaseModel):
 
 @register("assess_composition_confounding", "Quantify how much of a bulk signature is explained by mature-neuron marker expression (a proxy for infiltrated normal brain) and whether subtype differences survive residualisation.", CompositionInput, "statistics")
 def assess_composition_confounding(ws: Workspace, inp: CompositionInput) -> ToolOutput:
-    p, ctrl = _panel(inp.panel_id), _panel(inp.control_panel_id)
+    p, ctrl = _panel(ws, inp.panel_id), _panel(ws, inp.control_panel_id)
     rows = []
     for did in inp.dataset_ids:
         if did not in ws.cohorts:
@@ -410,7 +410,7 @@ def perform_cell_type_analysis(ws: Workspace, inp: CellTypeInput) -> ToolOutput:
         ws.single_cell[key] = a
         ws.put("sc_preprocess", rec)
     a = ws.single_cell[key]
-    p = _panel(inp.panel_id)
+    p = _panel(ws, inp.panel_id)
     tab, rec_ct = scm.cell_type_expression(a, p.genes)
     ref_ct = ws.put("sc_celltype", {"record": rec_ct.model_dump(mode="json"), "table": tab.round(4).reset_index().to_dict(orient="list")})
     mk, rec_mk = scm.marker_test(a, "cell_type_author", "Neoplastic", "rest", genes=p.genes)
@@ -482,8 +482,8 @@ class ValidateInput(BaseModel):
 def validate_across_cohorts(ws: Workspace, inp: ValidateInput) -> ToolOutput:
     ids = [inp.discovery_id] + [v for v in inp.validation_ids if v in ws.cohorts]
     missing = [v for v in inp.validation_ids if v not in ws.cohorts]
-    p = _panel(inp.panel_id)
-    ctrl = _panel("normal_neuron_markers")
+    p = _panel(ws, inp.panel_id)
+    ctrl = _panel(ws, "normal_neuron_markers")
     lims = [f"validation cohort {m} unavailable" for m in missing]
     suffix = "_resid" if inp.residualise_on_neuron_markers else ""
     if inp.hypothesis == "survival_association":
@@ -531,7 +531,7 @@ class SensitivityInput(BaseModel):
 
 @register("run_sensitivity_analysis", "Re-estimate the survival association under alternative specifications: unadjusted, rank score, neuron-marker adjustment, residualisation, IDH-wildtype / non-G-CIMP only, Neural subtype excluded, tertile split.", SensitivityInput, "validation")
 def run_sensitivity_analysis(ws: Workspace, inp: SensitivityInput) -> ToolOutput:
-    p, ctrl = _panel(inp.panel_id), _panel("normal_neuron_markers")
+    p, ctrl = _panel(ws, inp.panel_id), _panel(ws, "normal_neuron_markers")
     rows = []
     for did in inp.dataset_ids:
         if did in ws.cohorts:
@@ -581,7 +581,7 @@ def perform_spatial_analysis(ws: Workspace, inp: SpatialInput) -> ToolOutput:
         ws.put("spatial_preprocess", rec_pre)
     a = ws.single_cell[key]
     dom = spa.annotate_domains(a)
-    p = _panel(inp.panel_id)
+    p = _panel(ws, inp.panel_id)
     res, rec_p = spa.spatial_programme_analysis(a, p.genes, n_perm=inp.n_perm)
     genes_if = list(dict.fromkeys(p.genes + inp.extra_genes))
     itab, dist, rec_i = spa.interface_analysis(a, genes_if, res["neighbours"])
