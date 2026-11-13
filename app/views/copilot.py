@@ -64,6 +64,10 @@ if run:
     inv = Investigation(q, {"use_llm": use_llm, "workflows": override or None, "gsea_permutations": perms, "live_listing": live}, progress=progress)
     try:
         res = inv.run()
+        # The pages below only read figures, citations and artefacts. Drop the processed
+        # single-cell and spatial AnnData objects (~0.5 GB) so that each session does not
+        # keep its own copy; two runs were enough to crash the Community Cloud app.
+        inv.ws.single_cell.clear()
         st.session_state["inv"] = (res, inv.ws)
         st.session_state["report_run"] = res.investigation_id
         st.toast(f"Investigation {res.investigation_id} finished: {res.status}", icon=":material/check_circle:")

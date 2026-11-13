@@ -49,23 +49,31 @@ def parse_series_matrix_characteristics(path) -> pd.DataFrame:
 def load_darmanis_gse84465(dataset_record) -> ad.AnnData:
     counts_path = cached_file("gse84465_counts", GSE84465_COUNTS, "geo/GSE84465_GBM_All_data.csv.gz", "NCBI GEO")
     meta_path = cached_file("gse84465_matrix", GSE84465_MATRIX, "geo/GSE84465_series_matrix.txt.gz", "NCBI GEO")
-    counts = pd.read_csv(counts_path, sep=" ", index_col=0)
-    # Last rows are HTSeq summary lines (no_feature, ambiguous, ...) - drop them.
-    counts = counts[~counts.index.str.startswith("__")]
-    counts = counts[~counts.index.isin(["no_feature", "ambiguous", "too_low_aQual", "not_aligned", "alignment_not_unique"])]
+    # Read the gene x cell table in chunks straight into a sparse matrix. Reading it whole as a
+    # dense int64 frame peaks near 1.5 GB, enough to crash the Streamlit Community Cloud app.
+    blocks, genes, cells = [], [], None
+    summary_rows = {"no_feature", "ambiguous", "too_low_aQual", "not_aligned", "alignment_not_unique"}
+    for chunk in pd.read_csv(counts_path, sep=" ", index_col=0, chunksize=2000):
+        # Last rows are HTSeq summary lines (no_feature, ambiguous, ...) - drop them.
+        chunk = chunk[~chunk.index.str.startswith("__") & ~chunk.index.isin(summary_rows)]
+        cells = chunk.columns if cells is None else cells
+        blocks.append(sp.csr_matrix(chunk.to_numpy(dtype=np.float32)))
+        genes.extend(chunk.index)
+    counts_index = pd.Index(genes)
     meta = parse_series_matrix_characteristics(meta_path)
     # Cell identifiers in the counts file are "<plate id>.<well>"
     meta["cell_id"] = meta["plate_id"].astype(str) + "." + meta["well"].astype(str)
     meta = meta.set_index("cell_id")
-    meta = meta.reindex(counts.columns)
+    meta = meta.reindex(cells)
     if meta["cell_type"].isna().any():
         missing = int(meta["cell_type"].isna().sum())
         raise ValueError(f"{missing} cells in the counts matrix lack annotations in the series matrix")
-    X = sp.csr_matrix(counts.values.T.astype(np.float32))
+    X = sp.vstack(blocks).T.tocsr()
+    del blocks
     obs = meta.rename(columns={"cell_type": "cell_type_author", "tissue": "location", "patient_id": "patient", "tsne_cluster": "author_cluster"})
     obs["cell_type_author"] = obs["cell_type_author"].replace({"Astocyte": "Astrocyte"})  # typo in GEO annotation
     obs["is_neoplastic"] = obs["neoplastic"].eq("Neoplastic")
-    adata = ad.AnnData(X=X, obs=obs[["cell_type_author", "location", "patient", "author_cluster", "is_neoplastic", "title"]], var=pd.DataFrame(index=counts.index))
+    adata = ad.AnnData(X=X, obs=obs[["cell_type_author", "location", "patient", "author_cluster", "is_neoplastic", "title"]], var=pd.DataFrame(index=counts_index))
     adata.var_names_make_unique()
     adata.uns["dataset"] = dataset_record.model_dump(mode="json")
     adata.uns["provenance"] = {"counts_file": manifest_entry("gse84465_counts"), "metadata_file": manifest_entry("gse84465_matrix")}
