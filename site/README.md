@@ -8,6 +8,7 @@ The public face of NeuroBridge: a scroll-driven WebGL journey followed by sectio
 |---|---|
 | `story.src.html` | Source of the page (HTML, CSS and JavaScript in one file) |
 | `spatial_data.js` | Real Visium spots (positions, domains, five expression layers), base64-packed, about 42 KB |
+| `site_data.js` | Every number in the evidence chapters (agents replay, heatmap, forest plots, receipts), exported from one reference run by `scripts/export_site_data.py` |
 | `assets/app_*.jpg` | Screenshots of the running Streamlit app (dark theme, live run on public data) |
 | `build.py` | Inlines the spatial data and writes the two outputs below |
 | `index.html` | Standalone page for GitHub Pages or any static host |
@@ -17,6 +18,7 @@ The public face of NeuroBridge: a scroll-driven WebGL journey followed by sectio
 ## Run and deploy
 
 ```bash
+python scripts/export_site_data.py   # after a new reference run (default: the run named in the script)
 python site/build.py          # after editing story.src.html
 open site/index.html          # view locally (needs internet for the fonts and three.js)
 ```
