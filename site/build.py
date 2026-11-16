@@ -3,7 +3,8 @@
 Outputs:
   neurobridge-story.html  page fragment (as published as an Artifact)
   index.html              standalone page for GitHub Pages
-Regenerate spatial_data.js first if the Visium analysis changes (see docs/DATA_SOURCES.md).
+Regenerate spatial_data.js first if the Visium analysis changes (see docs/DATA_SOURCES.md),
+and site_data.js (python scripts/export_site_data.py) if the reference run changes.
 """
 
 import re
@@ -29,6 +30,8 @@ script = script.replace(
     "const el = (tag, attrs, parent) => { const e = document.createElementNS(NS, tag); for (const k in attrs) e.setAttribute(k, attrs[k]);",
     'const el = (tag, attrs, parent) => { const e = document.createElementNS(NS, tag); for (const k in attrs) { const v = String(attrs[k]); if ((k === "fill" || k === "stroke") && v.startsWith("var(")) e.style.setProperty(k, v); else e.setAttribute(k, v); }',
 )
+site_data = HERE / "site_data.js"  # written by scripts/export_site_data.py from the reference run
+script = script.replace("<script>/*SITE_DATA*/</script>", "<script>" + site_data.read_text() + "</script>", 1)
 frag = body + "<script>" + (HERE / "spatial_data.js").read_text() + "</script>" + script
 (HERE / "neurobridge-story.html").write_text(frag)
 head = frag.split("<style>")[0]

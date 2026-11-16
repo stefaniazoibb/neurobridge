@@ -15,6 +15,7 @@ with left:
     st.markdown("<h1 style='font-size:clamp(2.6rem,5.2vw,4.6rem);margin:0 0 1.2rem'>Biology is complex.<br><em>Discovery shouldn't be.</em></h1>", unsafe_allow_html=True)
     st.markdown("<p style='font-size:1.15rem;line-height:1.55;color:#bcb8ae;max-width:34em'>An agentic AI research platform connecting biological hypotheses, multimodal data and reproducible evidence, built around one question: do neurons shape glioblastoma in patients?</p>", unsafe_allow_html=True)
     q = st.text_area("Research question", value=st.session_state.get("question", DEMO_QUESTION), height=96, placeholder="Ask a research question about neuron–glioma biology…")
+    st.caption("Please don't enter personal or patient information. Questions are saved with the run on the server.")
     c1, c2 = st.columns([1, 1.3])
     if c1.button("Investigate", type="primary", icon=":material/arrow_forward:", width="stretch"):
         st.session_state["question"] = q

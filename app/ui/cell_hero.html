@@ -10,7 +10,9 @@
   .fallback { position: absolute; inset: 0; display: none; }
   .no-webgl .fallback { display: block; } .no-webgl canvas { display: none; }
 </style>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist+Mono:wght@400;500&display=swap">
+<style>/* self-hosted Geist Mono (SIL OFL), served by the app from app/static/fonts */
+@font-face { font-family: "Geist Mono"; font-style: normal; font-weight: 100 900; font-display: swap; src: url(/app/static/fonts/geist-mono-normal-latin.woff2) format("woff2"); }
+</style>
 </head><body>
 <canvas id="c"></canvas>
 <svg class="fallback" viewBox="0 0 600 520" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
