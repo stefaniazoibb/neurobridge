@@ -108,6 +108,7 @@ def main(run_id: str) -> None:
                 for k, f in sorted(repro.get("data_manifest", {}).items())
             ],
             "exportedFromCommit": sha,
+            "llmUsed": bool(next((e for e in log["events"] if e["kind"] == "investigation_started"), {}).get("options", {}).get("use_llm")),
         },
         "agents": [
             {

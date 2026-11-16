@@ -4,9 +4,7 @@
 <meta property="og:title" content="NeuroBridge · Neuron–glioma evidence platform">
 <meta property="og:description" content="Seven agents test whether neuron–glioma signalling is visible in patient data: graded claims, independent cohorts, every number traceable to one run.">
 <meta property="og:type" content="website">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,300;0,6..72,400;1,6..72,300&family=Hanken+Grotesk:wght@400;500;600&family=Geist+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="fonts/fonts.css">
 <style>
 /* Layout: a pinned WebGL stage carries an 8-stop scroll journey (cell → brain → tumour → cell → synapse → molecules → data → evidence),
    followed by editorial sections on a 12-column grid. Dark single-theme by design: a microscope field, not outer space.
@@ -341,7 +339,7 @@ details.disc table { margin-bottom: 18px; }
         <div><span class="tag" data-k="est"><i></i>Established in models</span><p>Neurons form AMPA-receptor synapses onto glioma cells and secrete neuroligin-3; both promote tumour growth in mouse and patient-derived xenograft models (Venkatesh et al. 2015, 2019; Venkataramani et al. 2019).</p></div>
         <div><span class="tag" data-k="est"><i></i>Reported in patients</span><p>Glioblastomas that are more functionally connected to surrounding circuits are associated with shorter survival (Krishna et al. 2023).</p></div>
         <div><span class="tag" data-k="hyp"><i></i>Hypothesis under test</span><p>Expression of neuron–glioma signalling genes marks distinct tumour subgroups and predicts survival, independently of how much normal brain each sample contains.</p></div>
-        <div><span class="tag" data-k="res"><i></i>What NeuroBridge found</span><p>A reproducible subgroup difference that is largely explained by normal-brain content, and no replicated survival association. The receptor genes are present in tumour tissue in one spatial section: a lead, not a conclusion.</p></div>
+        <div><span class="tag" data-k="res"><i></i>What NeuroBridge found</span><p>A reproducible subgroup difference that, in bulk tissue, cannot be separated from normal-brain content, and no replicated survival association. The receptor genes are present in tumour tissue in one spatial section: a lead, not a conclusion.</p></div>
       </div>
     </div>
   </div>
@@ -379,7 +377,7 @@ details.disc table { margin-bottom: 18px; }
             <tr><td>Europe PMC</td><td class="n"><span data-nb="literature.verified"></span> records</td><td>verified literature</td></tr>
           </tbody>
         </table>
-        <p class="mono" style="margin-top:14px;color:var(--ivory-3)">Primary tumours with expression and survival. No synthetic patient data anywhere in the platform.</p>
+        <p class="mono" style="margin-top:14px;color:var(--ivory-3)">Primary tumours with expression data; survival models use those with complete covariates. No synthetic patient data anywhere in the platform.</p>
       </div>
     </div>
   </div>
@@ -545,9 +543,9 @@ details.disc table { margin-bottom: 18px; }
 
 <footer>
   <div class="wrap grid">
-    <div><b>NeuroBridge</b>Built by Stefania Zoi. Research exploration only, not for diagnosis or treatment.</div>
-    <div><b>Data</b>TCGA-GBM via UCSC Xena · Chinese Glioma Genome Atlas · GEO GSE84465 · 10x Genomics Visium · Europe PMC.</div>
-    <div><b>Visuals</b>Biological scenes are conceptual renderings unless labelled as data. Spatial maps and charts show real results.</div>
+    <div><b>NeuroBridge</b>An independent, non-commercial research project by Stefania Zoi, built on public data. It is not medical advice and is not meant for diagnosis, prognosis or treatment decisions. Results are statistical associations in public cohorts. Text written by the language model is labelled and may contain errors; the numbers come from code. Contact: <a href="mailto:stefania.zoi18@gmail.com">stefania.zoi18@gmail.com</a>.</div>
+    <div><b>Data</b>TCGA-GBM via UCSC Xena · Chinese Glioma Genome Atlas (Zhao et al. 2021) · GEO GSE84465 (Darmanis et al. 2017) · "Human Glioblastoma: Whole Transcriptome Analysis" © 10x Genomics, <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a>, spot data simplified for the map · Europe PMC.</div>
+    <div><b>Visuals</b>Biological scenes are conceptual renderings unless labelled as data. Spatial maps and charts show real results. Fonts: Newsreader, Hanken Grotesk, Geist Mono (SIL OFL), served from this site. Site hosted by GitHub, Inc., 88 Colin P. Kelly Jr. St., San Francisco, CA 94107, USA; app hosted on Streamlit Community Cloud (Snowflake Inc.). Code: MIT.</div>
   </div>
 </footer>
 
@@ -1045,6 +1043,7 @@ const minus = v => String(v).replace("-", "−");
 /* evidence chapters: every number below is read from window.NB_DATA (scripts/export_site_data.py) */
 const NB = window.NB_DATA;
 const fmt = (v, d = 2) => minus((Math.abs(v) < 0.5 * 10 ** -d ? 0 : +v).toFixed(d));
+const llmNote = a => (NB.run.llmUsed && a.agent === "Hypothesis Agent" ? '<span class="lim" style="margin:0 0 6px">Written by the language model (schema-checked). Used for planning; it computes nothing.</span>' : "");
 const brief = (k, v) => Array.isArray(v) ? `${v.length} ${k.replace(/_/g, " ")}: ${typeof v[0] === "string" ? v[0] : JSON.stringify(v[0])}` : typeof v === "object" && v !== null ? `${k.replace(/_/g, " ")}: ${JSON.stringify(v)}` : `${k.replace(/_/g, " ")}: ${v}`;
 const fp = p => (p < 0.001 ? "< 0.001" : p < 0.01 ? p.toFixed(3) : p.toFixed(2));
 const esc = t => String(t).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
@@ -1107,7 +1106,7 @@ document.querySelectorAll("[data-nb]").forEach(e => (e.textContent = e.dataset.n
   $("#rpWhen").textContent = `${new Date(t0).toISOString().slice(0, 10)}, ${Math.round(span)} s, ${NB.calls.length} tool calls`;
   [0, 15, 30, 45, 60].filter(s => s <= span).forEach(s => { el("line", { x1: X(s), x2: X(s), y1: TOP - 6, y2: TOP + RH * lanes.length, stroke: "rgba(236,231,220,.08)" }, svg); el("text", { x: X(s), y: TOP + RH * lanes.length + 18, "text-anchor": "middle", class: "m" }, svg, `${s} s`); });
   const det = $("#agentDetail");
-  const showAgent = a => { const outs = Object.entries(a.outputs).slice(0, 3).map(([k, v]) => esc(brief(k, v)).slice(0, 240)).join("<br>"); det.innerHTML = `<b>${esc(a.agent)}.</b> ${esc(a.role)}.<br>${outs}${a.limitations.length ? `<span class="lim">${a.limitations.length} stated limitation${a.limitations.length > 1 ? "s" : ""}, e.g. “${esc(a.limitations[0]).slice(0, 200)}”</span>` : ""}`; };
+  const showAgent = a => { const outs = Object.entries(a.outputs).slice(0, 3).map(([k, v]) => esc(brief(k, v)).slice(0, 240)).join("<br>"); det.innerHTML = `<b>${esc(a.agent)}.</b> ${esc(a.role)}.<br>${llmNote(a)}${outs}${a.limitations.length ? `<span class="lim">${a.limitations.length} stated limitation${a.limitations.length > 1 ? "s" : ""}, e.g. “${esc(a.limitations[0]).slice(0, 200)}”</span>` : ""}`; };
   const showCall = c => { det.innerHTML = `<b>${esc(c.agent)}</b> called <code>${esc(c.tool)}</code> at +${Math.round((Date.parse(c.start) - t0) / 1000)} s (${c.s.toFixed(1)} s, ${esc(c.status)}).<br>${esc(c.out || "")}${c.lim.length ? `<span class="lim">Limitation logged: ${esc(c.lim[0])}</span>` : ""}`; };
   const ticks = [];
   lanes.forEach((name, i) => {
@@ -1145,7 +1144,7 @@ document.querySelectorAll("[data-nb]").forEach(e => (e.textContent = e.dataset.n
   $("#rpPlay").addEventListener("click", play);
   if (reduce) $("#rpPlay").hidden = true;
 
-  $("#agentList").innerHTML = NB.agents.map((a, i) => { const short = Object.entries(a.outputs).filter(([, v]) => typeof v !== "object" || Array.isArray(v)).slice(0, a.agent.includes("Reviewer") ? 3 : 1).map(([k, v]) => brief(k, v)).join(" · "); return `<li><b>${String(i + 1).padStart(2, "0")} · ${esc(a.agent)}</b><span class="role">${esc(a.role.charAt(0).toUpperCase() + a.role.slice(1))}</span>${short ? `<span class="out">${esc(short).slice(0, 190)}</span>` : ""}</li>`; }).join("");
+  $("#agentList").innerHTML = NB.agents.map((a, i) => { const short = Object.entries(a.outputs).filter(([, v]) => typeof v !== "object" || Array.isArray(v)).slice(0, a.agent.includes("Reviewer") ? 3 : 1).map(([k, v]) => brief(k, v)).join(" · "); return `<li><b>${String(i + 1).padStart(2, "0")} · ${esc(a.agent)}</b><span class="role">${esc(a.role.charAt(0).toUpperCase() + a.role.slice(1))}</span>${short ? `<span class="out">${esc(short).slice(0, 190)}</span>` : ""}${llmNote(a)}</li>`; }).join("");
 })();
 
 /* validation charts (all values from the run's validation artefacts) */

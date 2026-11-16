@@ -59,7 +59,7 @@ These numbers come from the reference run on the public data. The repository rep
 
 The spatial section adds a nuance the bulk data cannot provide. The receptor side of the pathway sits in tumour tissue, independent of neuronal content, which is what tumour-intrinsic expression would look like. It is one patient, so it is a lead, not a finding.
 
-That is a useful negative result. It tells a drug-discovery team that bulk transcript signatures are the wrong readout for neuron–glioma coupling. Deconvolution, spatial or functional readouts are needed. The platform reaches that conclusion by itself and states the evidence ceiling of the design: *statistical association*, never mechanism or causation.
+That is a useful negative result. It suggests that bulk transcript scores are a weak readout for neuron–glioma coupling, and that deconvolution, spatial or functional readouts are better placed to test it. The rule-based claim grading reaches this conclusion and states the evidence ceiling of the design: *statistical association*, never mechanism or causation. The language model only helps plan and writes the reviewer's narrative.
 
 ## The five modules
 

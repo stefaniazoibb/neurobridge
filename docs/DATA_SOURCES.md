@@ -24,6 +24,7 @@ The numbers below were checked against the sources on 2026-11-09 and are recompu
 - **Variables.** OS (days), censor, age, sex, IDH, 1p/19q, MGMT, radiotherapy, temozolomide. No Verhaak labels are distributed; NeuroBridge projects them, see the methodology.
 - **Independence.** No patient overlap with TCGA or between batches. This is checked in tests.
 - **Publication.** Zhao et al. 2021, *Genomics Proteomics Bioinformatics*, PMID 33662628.
+- **Terms of use.** The CGGA site gives no licence or redistribution terms (checked 2026-11-16); it asks users to cite Zhao et al. 2021. NeuroBridge downloads the files at run time into the git-ignored cache and redistributes none of them. Only summary statistics (effect sizes, hazard ratios, counts) appear in the app and on the website.
 
 ### GEO GSE84465: single-cell reference
 - **Files.** `GSE84465_GBM_All_data.csv.gz` (HTSeq counts, 23,460 genes × 3,589 cells) and the series matrix (author cell types, patient, tumour vs periphery).
